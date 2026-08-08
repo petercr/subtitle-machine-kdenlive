@@ -4,6 +4,7 @@ tools:
   whisper_cpp: "C:/Tools/whisper/Release/whisper-cli.exe"
   kdenlive: "C:/Program Files/Kdenlive/bin/kdenlive.exe"
   melt: "C:/Program Files/Kdenlive/bin/melt.exe"
+  llama_cpp: "llama-cli"
 
 asr:
   backend: whisper_cpp

@@ -10,6 +10,7 @@ from typing import Sequence
 
 from video_mcp import __version__
 from video_mcp.config import ConfigurationError, load_config
+from video_mcp.doctor import format_doctor_report, run_doctor
 from video_mcp.logging_config import configure_logging, get_job_logger
 
 
@@ -35,6 +36,13 @@ def build_parser() -> argparse.ArgumentParser:
         "config",
         help="Print the effective configuration after environment overrides.",
     )
+    doctor_parser = commands.add_parser(
+        "doctor",
+        help="Report local tool, hardware, model, and workspace capabilities.",
+    )
+    doctor_parser.add_argument(
+        "--json", action="store_true", help="Emit the report as JSON."
+    )
     return parser
 
 
@@ -59,6 +67,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "config":
         print(json.dumps(config.as_dict(), indent=2))
         return 0
+
+    if args.command == "doctor":
+        report = run_doctor(config)
+        if args.json:
+            print(json.dumps(report.as_dict(), indent=2))
+        else:
+            print(format_doctor_report(report))
+        return 0 if report.core_ready else 1
 
     parser.error(f"Unknown command: {args.command}")
     return 2
