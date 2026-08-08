@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Sequence
 
 from video_mcp import __version__
+from video_mcp.asr.base import TranscriptionOptions
+from video_mcp.asr.whisper_cpp import WhisperCppBackend
 from video_mcp.config import ConfigurationError, load_config
 from video_mcp.doctor import format_doctor_report, run_doctor
 from video_mcp.errors import VideoMcpError
@@ -67,6 +69,31 @@ def build_parser() -> argparse.ArgumentParser:
     )
     extract_parser.add_argument(
         "--json", action="store_true", help="Emit the output paths as JSON."
+    )
+    transcribe_parser = commands.add_parser(
+        "transcribe",
+        help="Transcribe a normalized audio file with Whisper.cpp.",
+    )
+    transcribe_parser.add_argument("input", type=Path, help="Input audio path.")
+    transcribe_parser.add_argument(
+        "--output", type=Path, help="Transcript JSON path (defaults inside workspace)."
+    )
+    transcribe_parser.add_argument(
+        "--language", default="auto", help="Spoken language code or auto-detect."
+    )
+    transcribe_parser.add_argument(
+        "--device",
+        choices=("auto", "cpu", "cuda"),
+        help="ASR device selection (defaults to configuration).",
+    )
+    transcribe_parser.add_argument(
+        "--threads", type=int, default=4, help="Whisper.cpp CPU thread count."
+    )
+    transcribe_parser.add_argument(
+        "--overwrite", action="store_true", help="Replace an existing transcript JSON."
+    )
+    transcribe_parser.add_argument(
+        "--json", action="store_true", help="Emit the result paths as JSON."
     )
     return parser
 
@@ -130,6 +157,60 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps(result, indent=2))
         else:
             print(f"Audio: {audio_path}")
+        return 0
+
+    if args.command == "transcribe":
+        if config.asr.backend != "whisper_cpp":
+            print(
+                f"Configuration error: unsupported ASR backend '{config.asr.backend}'",
+                file=sys.stderr,
+            )
+            return 2
+        if args.threads <= 0:
+            print("Configuration error: --threads must be greater than zero", file=sys.stderr)
+            return 2
+        output = (
+            args.output
+            or config.output.workspace / f"{args.input.stem}.transcript.raw.json"
+        )
+        if output.exists() and not args.overwrite:
+            print(
+                f"Output already exists: {output}; pass --overwrite to replace it",
+                file=sys.stderr,
+            )
+            return 1
+        try:
+            backend = WhisperCppBackend(
+                config.tools.whisper_cpp,
+                config.asr.model,
+            )
+            transcript = backend.transcribe(
+                args.input,
+                TranscriptionOptions(
+                    language=args.language,
+                    device=args.device or config.asr.device,
+                    threads=args.threads,
+                ),
+            )
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(
+                json.dumps(transcript.as_dict(), indent=2), encoding="utf-8"
+            )
+        except (VideoMcpError, ValueError, OSError) as exc:
+            print(f"Transcription error: {exc}", file=sys.stderr)
+            return 1
+        result = {
+            "input": str(args.input.resolve()),
+            "transcript": str(output.resolve()),
+            "language": transcript.language,
+            "segments": len(transcript.segments),
+        }
+        if args.json:
+            print(json.dumps(result, indent=2))
+        else:
+            print(f"Transcript: {output.resolve()}")
+            print(f"Language: {transcript.language or 'unknown'}")
+            print(f"Segments: {len(transcript.segments)}")
         return 0
 
     parser.error(f"Unknown command: {args.command}")

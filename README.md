@@ -42,6 +42,15 @@ The inspection output is normalized application data from FFprobe. Audio
 extraction creates a mono, 16 kHz, 16-bit PCM WAV in the configured workspace;
 existing output is preserved unless `--overwrite` is supplied.
 
+Transcribe a normalized audio file with the configured Whisper.cpp model:
+
+```powershell
+uv run video-mcp --config video-mcp.example.yaml transcribe "work\Test Video.wav" --device cpu
+```
+
+This writes a versioned `*.transcript.raw.json` file containing segment and
+token timestamps. The source audio is never modified.
+
 # Codex Implementation Brief — Windows Local Video Subtitle MCP
 
 ## Goal
