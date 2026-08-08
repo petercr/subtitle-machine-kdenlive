@@ -31,6 +31,17 @@ uv run video-mcp --config video-mcp.example.yaml doctor
 uv run video-mcp --config video-mcp.example.yaml doctor --json
 ```
 
+Inspect a source video and extract the normalized ASR audio with:
+
+```powershell
+uv run video-mcp --config video-mcp.example.yaml inspect "C:\Videos\Test Video.mp4"
+uv run video-mcp --config video-mcp.example.yaml extract-audio "C:\Videos\Test Video.mp4"
+```
+
+The inspection output is normalized application data from FFprobe. Audio
+extraction creates a mono, 16 kHz, 16-bit PCM WAV in the configured workspace;
+existing output is preserved unless `--overwrite` is supplied.
+
 # Codex Implementation Brief — Windows Local Video Subtitle MCP
 
 ## Goal
