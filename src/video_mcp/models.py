@@ -46,3 +46,40 @@ class MediaInfo:
         value = asdict(self)
         value["path"] = str(self.path)
         return value
+
+
+@dataclass(frozen=True, slots=True)
+class Word:
+    """A timestamped piece of recognized speech."""
+
+    start_ms: int
+    end_ms: int
+    text: str
+    confidence: float | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class SubtitleSegment:
+    """A normalized caption-sized unit from an ASR backend."""
+
+    id: str
+    start_ms: int
+    end_ms: int
+    text: str
+    words: list[Word]
+    speaker: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class Transcript:
+    """Versioned, JSON-serializable transcript data."""
+
+    language: str | None
+    duration_ms: int
+    segments: list[SubtitleSegment]
+    schema_version: int = 1
+
+    def as_dict(self) -> dict[str, Any]:
+        """Return the stable JSON representation used by later pipeline steps."""
+
+        return asdict(self)
