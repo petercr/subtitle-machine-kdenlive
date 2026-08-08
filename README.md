@@ -24,6 +24,13 @@ Print the effective configuration with:
 uv run video-mcp --config video-mcp.example.yaml config
 ```
 
+Run the local environment diagnostic with:
+
+```powershell
+uv run video-mcp --config video-mcp.example.yaml doctor
+uv run video-mcp --config video-mcp.example.yaml doctor --json
+```
+
 # Codex Implementation Brief — Windows Local Video Subtitle MCP
 
 ## Goal

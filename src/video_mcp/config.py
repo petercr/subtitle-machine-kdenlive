@@ -23,6 +23,7 @@ class ToolConfig:
     whisper_cpp: Path = Path("whisper-cli")
     kdenlive: Path = Path("kdenlive")
     melt: Path = Path("melt")
+    llama_cpp: Path = Path("llama-cli")
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,6 +65,7 @@ ENVIRONMENT_OVERRIDES: dict[str, tuple[str, str]] = {
     "VIDEO_MCP_WHISPER_CPP": ("tools", "whisper_cpp"),
     "VIDEO_MCP_KDENLIVE": ("tools", "kdenlive"),
     "VIDEO_MCP_MELT": ("tools", "melt"),
+    "VIDEO_MCP_LLAMA_CPP": ("tools", "llama_cpp"),
     "VIDEO_MCP_ASR_BACKEND": ("asr", "backend"),
     "VIDEO_MCP_ASR_DEVICE": ("asr", "device"),
     "VIDEO_MCP_ASR_MODEL": ("asr", "model"),
@@ -153,6 +155,7 @@ def _build_config(
             whisper_cpp=_tool_path(tools.get("whisper_cpp", "whisper-cli"), base_dir),
             kdenlive=_tool_path(tools.get("kdenlive", "kdenlive"), base_dir),
             melt=_tool_path(tools.get("melt", "melt"), base_dir),
+            llama_cpp=_tool_path(tools.get("llama_cpp", "llama-cli"), base_dir),
         ),
         asr=ASRConfig(
             backend=str(asr.get("backend", "whisper_cpp")),
