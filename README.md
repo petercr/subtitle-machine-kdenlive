@@ -1,6 +1,29 @@
 # subtitle-machine-kdenlive
 An app/MCP that allows for programmatic use of Kdenlive by MCP to add subtitles to videos.
 
+## Development setup
+
+The project targets Python 3.11+ and uses uv to manage its local virtual
+environment and locked dependencies. Development currently pins Python 3.12.
+
+```powershell
+uv sync
+uv run video-mcp --version
+uv run pytest
+```
+
+Copy `video-mcp.example.yaml` to the machine-local `video-mcp.yaml` when you
+want to customize executable, model, or output paths. The local file is ignored
+by Git. Environment variables such as `VIDEO_MCP_FFMPEG`,
+`VIDEO_MCP_WHISPER_CPP`, `VIDEO_MCP_ASR_MODEL`, `VIDEO_MCP_ASR_DEVICE`, and
+`VIDEO_MCP_WORKSPACE` override YAML values.
+
+Print the effective configuration with:
+
+```powershell
+uv run video-mcp --config video-mcp.example.yaml config
+```
+
 # Codex Implementation Brief — Windows Local Video Subtitle MCP
 
 ## Goal
