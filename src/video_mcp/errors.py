@@ -63,3 +63,7 @@ class TranscriptionFailed(ExternalCommandFailed):
 
 class InvalidTranscriptOutput(VideoMcpError):
     """Raised when an ASR backend returns malformed structured output."""
+
+
+class SubtitleGenerationFailed(VideoMcpError):
+    """Raised when normalized subtitle data cannot produce a valid file."""

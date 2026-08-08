@@ -17,6 +17,8 @@ from video_mcp.errors import VideoMcpError
 from video_mcp.logging_config import configure_logging, get_job_logger
 from video_mcp.media.ffmpeg import extract_audio
 from video_mcp.media.probe import format_media_info, probe_video
+from video_mcp.models import Transcript
+from video_mcp.subtitles.srt import write_srt
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -93,6 +95,20 @@ def build_parser() -> argparse.ArgumentParser:
         "--overwrite", action="store_true", help="Replace an existing transcript JSON."
     )
     transcribe_parser.add_argument(
+        "--json", action="store_true", help="Emit the result paths as JSON."
+    )
+    srt_parser = commands.add_parser(
+        "export-srt",
+        help="Export a normalized transcript JSON file as SRT.",
+    )
+    srt_parser.add_argument("input", type=Path, help="Input transcript JSON path.")
+    srt_parser.add_argument(
+        "--output", type=Path, help="Output SRT path (defaults inside workspace)."
+    )
+    srt_parser.add_argument(
+        "--overwrite", action="store_true", help="Replace an existing SRT file."
+    )
+    srt_parser.add_argument(
         "--json", action="store_true", help="Emit the result paths as JSON."
     )
     return parser
@@ -211,6 +227,34 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"Transcript: {output.resolve()}")
             print(f"Language: {transcript.language or 'unknown'}")
             print(f"Segments: {len(transcript.segments)}")
+        return 0
+
+    if args.command == "export-srt":
+        output = args.output or config.output.workspace / f"{args.input.stem}.srt"
+        if output.exists() and not args.overwrite:
+            print(
+                f"Output already exists: {output}; pass --overwrite to replace it",
+                file=sys.stderr,
+            )
+            return 1
+        try:
+            transcript = Transcript.from_dict(
+                json.loads(args.input.read_text(encoding="utf-8"))
+            )
+            srt_path = write_srt(transcript, output, overwrite=args.overwrite)
+        except (VideoMcpError, ValueError, OSError, json.JSONDecodeError) as exc:
+            print(f"Subtitle error: {exc}", file=sys.stderr)
+            return 1
+        result = {
+            "input": str(args.input.resolve()),
+            "srt": str(srt_path),
+            "cues": len(transcript.segments),
+        }
+        if args.json:
+            print(json.dumps(result, indent=2))
+        else:
+            print(f"SRT: {srt_path}")
+            print(f"Cues: {len(transcript.segments)}")
         return 0
 
     parser.error(f"Unknown command: {args.command}")

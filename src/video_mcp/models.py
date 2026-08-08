@@ -83,3 +83,62 @@ class Transcript:
         """Return the stable JSON representation used by later pipeline steps."""
 
         return asdict(self)
+
+    @classmethod
+    def from_dict(cls, value: Any) -> "Transcript":
+        """Load the stable JSON representation written by the ASR pipeline."""
+
+        if not isinstance(value, dict):
+            raise ValueError("Transcript JSON root must be an object")
+        schema_version = int(value.get("schema_version", 1))
+        if schema_version != 1:
+            raise ValueError(f"Unsupported transcript schema version: {schema_version}")
+        raw_segments = value.get("segments")
+        if not isinstance(raw_segments, list):
+            raise ValueError("Transcript segments must be an array")
+
+        segments: list[SubtitleSegment] = []
+        for raw_segment in raw_segments:
+            if not isinstance(raw_segment, dict):
+                raise ValueError("Transcript segment must be an object")
+            raw_words = raw_segment.get("words", [])
+            if not isinstance(raw_words, list):
+                raise ValueError("Transcript words must be an array")
+            words = [
+                Word(
+                    start_ms=int(raw_word["start_ms"]),
+                    end_ms=int(raw_word["end_ms"]),
+                    text=str(raw_word["text"]),
+                    confidence=(
+                        float(raw_word["confidence"])
+                        if raw_word.get("confidence") is not None
+                        else None
+                    ),
+                )
+                for raw_word in raw_words
+                if isinstance(raw_word, dict)
+            ]
+            if len(words) != len(raw_words):
+                raise ValueError("Transcript word must be an object")
+            segments.append(
+                SubtitleSegment(
+                    id=str(raw_segment["id"]),
+                    start_ms=int(raw_segment["start_ms"]),
+                    end_ms=int(raw_segment["end_ms"]),
+                    text=str(raw_segment["text"]),
+                    words=words,
+                    speaker=(
+                        str(raw_segment["speaker"])
+                        if raw_segment.get("speaker") is not None
+                        else None
+                    ),
+                )
+            )
+        return cls(
+            language=(
+                str(value["language"]) if value.get("language") is not None else None
+            ),
+            duration_ms=int(value.get("duration_ms", 0)),
+            segments=segments,
+            schema_version=schema_version,
+        )
