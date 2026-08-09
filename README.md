@@ -109,6 +109,17 @@ another project path and `--overwrite` to replace existing project assets.
 Editable Kdenlive export currently requires SRT; ASS remains the asset used
 for FFmpeg burned-in previews.
 
+Run the thin MCP server over stdio:
+
+```powershell
+uv run video-mcp-server
+```
+
+The MCP layer exposes the tested direct services for inspection, local
+transcription, captioning, preview rendering, SRT/ASS export, and Kdenlive
+project creation. It does not duplicate media-processing logic or require a
+running Kdenlive GUI.
+
 # Codex Implementation Brief — Windows Local Video Subtitle MCP
 
 ## Goal
