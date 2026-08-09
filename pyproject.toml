@@ -13,6 +13,7 @@ authors = [
   { name = "subtitle-machine-kdenlive contributors" },
 ]
 dependencies = [
+  "mcp[cli]>=2.0.0",
   "PyYAML>=6.0",
 ]
 
@@ -23,6 +24,7 @@ dev = [
 
 [project.scripts]
 video-mcp = "video_mcp.cli:main"
+video-mcp-server = "video_mcp.mcp.server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
