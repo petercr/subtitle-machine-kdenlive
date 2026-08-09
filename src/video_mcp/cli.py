@@ -19,6 +19,7 @@ from video_mcp.media.ffmpeg import extract_audio
 from video_mcp.media.probe import format_media_info, probe_video
 from video_mcp.media.render import create_preview
 from video_mcp.models import Transcript
+from video_mcp.services.captioning import CaptionOptions, caption_video
 from video_mcp.subtitles.ass import write_ass
 from video_mcp.subtitles.srt import write_srt
 
@@ -149,6 +150,37 @@ def build_parser() -> argparse.ArgumentParser:
     )
     preview_parser.add_argument(
         "--json", action="store_true", help="Emit the result paths as JSON."
+    )
+    caption_parser = commands.add_parser(
+        "caption",
+        help="Run the complete local caption pipeline for a video.",
+    )
+    caption_parser.add_argument("input", type=Path, help="Input video path.")
+    caption_parser.add_argument(
+        "--language", default="auto", help="Spoken language code or auto-detect."
+    )
+    caption_parser.add_argument(
+        "--device",
+        choices=("auto", "cpu", "cuda"),
+        help="ASR device selection (defaults to configuration).",
+    )
+    caption_parser.add_argument(
+        "--threads", type=int, default=4, help="Whisper.cpp CPU thread count."
+    )
+    caption_parser.add_argument(
+        "--style", help="ASS style preset (defaults to configuration)."
+    )
+    caption_parser.add_argument(
+        "--preview-width", type=int, default=1280, help="Preview width."
+    )
+    caption_parser.add_argument(
+        "--no-preview", action="store_true", help="Stop after transcript and subtitle exports."
+    )
+    caption_parser.add_argument(
+        "--overwrite", action="store_true", help="Replace existing job artifacts."
+    )
+    caption_parser.add_argument(
+        "--json", action="store_true", help="Emit structured job results as JSON."
     )
     return parser
 
@@ -367,6 +399,42 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             print(f"Preview: {preview_path}")
             print(f"Width: {args.width}")
+        return 0
+
+    if args.command == "caption":
+        if args.threads <= 0 or args.preview_width <= 0:
+            print(
+                "Configuration error: --threads and --preview-width must be greater than zero",
+                file=sys.stderr,
+            )
+            return 2
+        try:
+            result = caption_video(
+                args.input,
+                config,
+                CaptionOptions(
+                    language=args.language,
+                    device=args.device or config.asr.device,
+                    threads=args.threads,
+                    style=args.style or config.subtitles.preset,
+                    preview_width=args.preview_width,
+                    create_preview=not args.no_preview,
+                    overwrite=args.overwrite,
+                ),
+            )
+        except (VideoMcpError, ValueError, OSError, json.JSONDecodeError) as exc:
+            print(f"Caption error: {exc}", file=sys.stderr)
+            return 1
+        if args.json:
+            print(json.dumps(result.as_dict(), indent=2))
+        else:
+            print(f"Job: {result.job_dir}")
+            print(f"Transcript: {result.transcript_cleaned_json}")
+            print(f"SRT: {result.subtitles_srt}")
+            print(f"ASS: {result.subtitles_ass}")
+            if result.preview_mp4:
+                print(f"Preview: {result.preview_mp4}")
+            print(f"Segments: {result.segment_count}")
         return 0
 
     parser.error(f"Unknown command: {args.command}")
