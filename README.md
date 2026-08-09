@@ -51,6 +51,16 @@ uv run video-mcp --config video-mcp.example.yaml transcribe "work\Test Video.wav
 This writes a versioned `*.transcript.raw.json` file containing segment and
 token timestamps. The source audio is never modified.
 
+Export normalized transcript data as SRT:
+
+```powershell
+uv run video-mcp --config video-mcp.example.yaml export-srt "work\Test Video.transcript.raw.json"
+```
+
+SRT cue numbers are generated deterministically, timestamps are validated for
+ordering and overlap, and existing output is preserved unless `--overwrite` is
+supplied.
+
 # Codex Implementation Brief — Windows Local Video Subtitle MCP
 
 ## Goal
