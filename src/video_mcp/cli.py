@@ -20,6 +20,7 @@ from video_mcp.media.probe import format_media_info, probe_video
 from video_mcp.media.render import create_preview
 from video_mcp.models import Transcript
 from video_mcp.services.captioning import CaptionOptions, caption_video
+from video_mcp.services.kdenlive import create_kdenlive_project
 from video_mcp.subtitles.ass import write_ass
 from video_mcp.subtitles.srt import write_srt
 
@@ -149,6 +150,23 @@ def build_parser() -> argparse.ArgumentParser:
         "--overwrite", action="store_true", help="Replace an existing preview."
     )
     preview_parser.add_argument(
+        "--json", action="store_true", help="Emit the result paths as JSON."
+    )
+    kdenlive_parser = commands.add_parser(
+        "kdenlive",
+        help="Create an editable Kdenlive project from a video and SRT file.",
+    )
+    kdenlive_parser.add_argument("input", type=Path, help="Input video path.")
+    kdenlive_parser.add_argument(
+        "--subtitles", required=True, type=Path, help="Editable SRT subtitle path."
+    )
+    kdenlive_parser.add_argument(
+        "--output", type=Path, help="Output .kdenlive path (defaults inside workspace)."
+    )
+    kdenlive_parser.add_argument(
+        "--overwrite", action="store_true", help="Replace an existing project and SRT."
+    )
+    kdenlive_parser.add_argument(
         "--json", action="store_true", help="Emit the result paths as JSON."
     )
     caption_parser = commands.add_parser(
@@ -399,6 +417,28 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             print(f"Preview: {preview_path}")
             print(f"Width: {args.width}")
+        return 0
+
+    if args.command == "kdenlive":
+        try:
+            result = create_kdenlive_project(
+                args.input,
+                args.subtitles,
+                config,
+                output_path=args.output,
+                overwrite=args.overwrite,
+            )
+        except (VideoMcpError, ValueError, OSError) as exc:
+            print(f"Kdenlive error: {exc}", file=sys.stderr)
+            return 1
+        if args.json:
+            print(json.dumps(result.as_dict(), indent=2))
+        else:
+            print(f"Project: {result.project_path}")
+            print(f"Subtitles: {result.project_subtitles_path}")
+            print(f"Source: {result.input_path}")
+            print(f"Resolution: {result.width}x{result.height}")
+            print(f"Frame rate: {result.frame_rate:.3f} fps")
         return 0
 
     if args.command == "caption":
