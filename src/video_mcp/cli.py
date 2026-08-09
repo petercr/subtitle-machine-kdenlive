@@ -9,8 +9,6 @@ from pathlib import Path
 from typing import Sequence
 
 from video_mcp import __version__
-from video_mcp.asr.base import TranscriptionOptions
-from video_mcp.asr.whisper_cpp import WhisperCppBackend
 from video_mcp.config import ConfigurationError, load_config
 from video_mcp.doctor import format_doctor_report, run_doctor
 from video_mcp.errors import VideoMcpError
@@ -21,6 +19,7 @@ from video_mcp.media.render import create_preview
 from video_mcp.models import Transcript
 from video_mcp.services.captioning import CaptionOptions, caption_video
 from video_mcp.services.kdenlive import create_kdenlive_project
+from video_mcp.services.transcription import transcribe_audio
 from video_mcp.subtitles.ass import write_ass
 from video_mcp.subtitles.srt import write_srt
 
@@ -78,7 +77,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     transcribe_parser = commands.add_parser(
         "transcribe",
-        help="Transcribe a normalized audio file with Whisper.cpp.",
+        help="Transcribe a normalized audio file with the configured ASR backend.",
     )
     transcribe_parser.add_argument("input", type=Path, help="Input audio path.")
     transcribe_parser.add_argument(
@@ -93,7 +92,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="ASR device selection (defaults to configuration).",
     )
     transcribe_parser.add_argument(
-        "--threads", type=int, default=4, help="Whisper.cpp CPU thread count."
+        "--threads", type=int, default=4, help="ASR CPU thread count."
     )
     transcribe_parser.add_argument(
         "--overwrite", action="store_true", help="Replace an existing transcript JSON."
@@ -265,12 +264,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     if args.command == "transcribe":
-        if config.asr.backend != "whisper_cpp":
-            print(
-                f"Configuration error: unsupported ASR backend '{config.asr.backend}'",
-                file=sys.stderr,
-            )
-            return 2
         if args.threads <= 0:
             print("Configuration error: --threads must be greater than zero", file=sys.stderr)
             return 2
@@ -285,37 +278,30 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             return 1
         try:
-            backend = WhisperCppBackend(
-                config.tools.whisper_cpp,
-                config.asr.model,
-            )
-            transcript = backend.transcribe(
+            transcription = transcribe_audio(
                 args.input,
-                TranscriptionOptions(
-                    language=args.language,
-                    device=args.device or config.asr.device,
-                    threads=args.threads,
-                ),
-            )
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(
-                json.dumps(transcript.as_dict(), indent=2), encoding="utf-8"
+                config,
+                output_path=output,
+                language=args.language,
+                device=args.device or config.asr.device,
+                threads=args.threads,
+                overwrite=args.overwrite,
             )
         except (VideoMcpError, ValueError, OSError) as exc:
             print(f"Transcription error: {exc}", file=sys.stderr)
             return 1
         result = {
-            "input": str(args.input.resolve()),
-            "transcript": str(output.resolve()),
-            "language": transcript.language,
-            "segments": len(transcript.segments),
+            "input": str(transcription.input_path),
+            "transcript": str(transcription.transcript_path),
+            "language": transcription.language,
+            "segments": transcription.segment_count,
         }
         if args.json:
             print(json.dumps(result, indent=2))
         else:
-            print(f"Transcript: {output.resolve()}")
-            print(f"Language: {transcript.language or 'unknown'}")
-            print(f"Segments: {len(transcript.segments)}")
+            print(f"Transcript: {transcription.transcript_path}")
+            print(f"Language: {transcription.language or 'unknown'}")
+            print(f"Segments: {transcription.segment_count}")
         return 0
 
     if args.command == "export-srt":

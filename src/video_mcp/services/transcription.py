@@ -7,9 +7,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from video_mcp.asr.base import TranscriptionOptions
-from video_mcp.asr.whisper_cpp import WhisperCppBackend
+from video_mcp.asr.factory import create_asr_backend
 from video_mcp.config import AppConfig
-from video_mcp.models import Transcript
 
 PathLike = str | Path
 
@@ -45,8 +44,6 @@ def transcribe_audio(
 ) -> TranscriptionResult:
     """Transcribe normalized audio and persist the versioned transcript JSON."""
 
-    if config.asr.backend != "whisper_cpp":
-        raise ValueError(f"Unsupported ASR backend: {config.asr.backend}")
     audio = Path(input_path).expanduser().resolve()
     destination = Path(output_path).expanduser() if output_path else (
         config.output.workspace / f"{audio.stem}.transcript.raw.json"
@@ -57,7 +54,7 @@ def transcribe_audio(
             f"Output already exists: {destination}; pass overwrite=True to replace it"
         )
 
-    backend = WhisperCppBackend(config.tools.whisper_cpp, config.asr.model)
+    backend = create_asr_backend(config)
     transcript = backend.transcribe(
         audio,
         TranscriptionOptions(

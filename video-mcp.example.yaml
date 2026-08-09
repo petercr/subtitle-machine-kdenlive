@@ -2,6 +2,7 @@ tools:
   ffmpeg: "C:/Users/pcruc/AppData/Local/Microsoft/WinGet/Links/ffmpeg.exe"
   ffprobe: "C:/Users/pcruc/AppData/Local/Microsoft/WinGet/Links/ffprobe.exe"
   whisper_cpp: "C:/Tools/whisper/Release/whisper-cli.exe"
+  parakeet: "parakeet-cli"
   kdenlive: "C:/Program Files/Kdenlive/bin/kdenlive.exe"
   melt: "C:/Program Files/Kdenlive/bin/melt.exe"
   llama_cpp: "llama-cli"

@@ -74,6 +74,7 @@ def run_doctor(config: AppConfig) -> DoctorReport:
         _nvidia_diagnostic(),
         _tool_diagnostic("Kdenlive", config.tools.kdenlive),
         _tool_diagnostic("MLT/melt", config.tools.melt),
+        _tool_diagnostic("Parakeet", config.tools.parakeet, args=("-h",), optional=True),
         _tool_diagnostic("llama.cpp", config.tools.llama_cpp, optional=True),
         _workspace_diagnostic(config.output.workspace),
     )
