@@ -82,6 +82,19 @@ uv run video-mcp --config video-mcp.example.yaml create-preview `
 Preview rendering uses FFmpeg, preserves the source video, and defaults to a
 1280-pixel-wide H.264/AAC output. Use `--width` and `--overwrite` as needed.
 
+Run the complete local caption pipeline with one command:
+
+```powershell
+uv run video-mcp --config video-mcp.example.yaml caption `
+  "C:\Videos\Test Video.mp4" `
+  --device cpu
+```
+
+This creates a job directory containing `source.json`, normalized audio,
+`transcript.raw.json`, `transcript.cleaned.json`, `subtitles.srt`,
+`subtitles.ass`, and `captioned-preview.mp4`. Re-running reuses existing
+artifacts; use `--overwrite` to regenerate them.
+
 # Codex Implementation Brief — Windows Local Video Subtitle MCP
 
 ## Goal
