@@ -18,6 +18,7 @@ from video_mcp.logging_config import configure_logging, get_job_logger
 from video_mcp.media.ffmpeg import extract_audio
 from video_mcp.media.probe import format_media_info, probe_video
 from video_mcp.models import Transcript
+from video_mcp.subtitles.ass import write_ass
 from video_mcp.subtitles.srt import write_srt
 
 
@@ -109,6 +110,25 @@ def build_parser() -> argparse.ArgumentParser:
         "--overwrite", action="store_true", help="Replace an existing SRT file."
     )
     srt_parser.add_argument(
+        "--json", action="store_true", help="Emit the result paths as JSON."
+    )
+    ass_parser = commands.add_parser(
+        "export-ass",
+        help="Export a normalized transcript JSON file as styled ASS.",
+    )
+    ass_parser.add_argument("input", type=Path, help="Input transcript JSON path.")
+    ass_parser.add_argument(
+        "--output", type=Path, help="Output ASS path (defaults inside workspace)."
+    )
+    ass_parser.add_argument(
+        "--style", help="Named ASS style preset (defaults to configuration)."
+    )
+    ass_parser.add_argument("--width", type=int, default=1920, help="ASS play width.")
+    ass_parser.add_argument("--height", type=int, default=1080, help="ASS play height.")
+    ass_parser.add_argument(
+        "--overwrite", action="store_true", help="Replace an existing ASS file."
+    )
+    ass_parser.add_argument(
         "--json", action="store_true", help="Emit the result paths as JSON."
     )
     return parser
@@ -254,6 +274,46 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps(result, indent=2))
         else:
             print(f"SRT: {srt_path}")
+            print(f"Cues: {len(transcript.segments)}")
+        return 0
+
+    if args.command == "export-ass":
+        output = args.output or config.output.workspace / f"{args.input.stem}.ass"
+        if output.exists() and not args.overwrite:
+            print(
+                f"Output already exists: {output}; pass --overwrite to replace it",
+                file=sys.stderr,
+            )
+            return 1
+        try:
+            if args.width <= 0 or args.height <= 0:
+                raise ValueError("ASS width and height must be greater than zero")
+            transcript = Transcript.from_dict(
+                json.loads(args.input.read_text(encoding="utf-8"))
+            )
+            ass_path = write_ass(
+                transcript,
+                output,
+                style=args.style or config.subtitles.preset,
+                play_res_x=args.width,
+                play_res_y=args.height,
+                overwrite=args.overwrite,
+            )
+        except (VideoMcpError, ValueError, OSError, json.JSONDecodeError) as exc:
+            print(f"Subtitle error: {exc}", file=sys.stderr)
+            return 1
+        result = {
+            "input": str(args.input.resolve()),
+            "ass": str(ass_path),
+            "style": args.style or config.subtitles.preset,
+            "cues": len(transcript.segments),
+            "play_resolution": {"width": args.width, "height": args.height},
+        }
+        if args.json:
+            print(json.dumps(result, indent=2))
+        else:
+            print(f"ASS: {ass_path}")
+            print(f"Style: {result['style']}")
             print(f"Cues: {len(transcript.segments)}")
         return 0
 
