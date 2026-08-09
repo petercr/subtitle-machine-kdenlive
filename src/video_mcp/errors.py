@@ -71,3 +71,7 @@ class SubtitleGenerationFailed(VideoMcpError):
 
 class RenderFailed(ExternalCommandFailed):
     """Raised when FFmpeg cannot render a subtitled video."""
+
+
+class KdenliveProjectFailed(VideoMcpError):
+    """Raised when a Kdenlive project cannot be generated safely."""
