@@ -17,6 +17,7 @@ from video_mcp.errors import VideoMcpError
 from video_mcp.logging_config import configure_logging, get_job_logger
 from video_mcp.media.ffmpeg import extract_audio
 from video_mcp.media.probe import format_media_info, probe_video
+from video_mcp.media.render import create_preview
 from video_mcp.models import Transcript
 from video_mcp.subtitles.ass import write_ass
 from video_mcp.subtitles.srt import write_srt
@@ -129,6 +130,24 @@ def build_parser() -> argparse.ArgumentParser:
         "--overwrite", action="store_true", help="Replace an existing ASS file."
     )
     ass_parser.add_argument(
+        "--json", action="store_true", help="Emit the result paths as JSON."
+    )
+    preview_parser = commands.add_parser(
+        "create-preview",
+        help="Burn ASS subtitles into a fast, downscaled MP4 preview.",
+    )
+    preview_parser.add_argument("input", type=Path, help="Input video path.")
+    preview_parser.add_argument("subtitles", type=Path, help="Input ASS subtitle path.")
+    preview_parser.add_argument(
+        "--output", type=Path, help="Output preview path (defaults inside workspace)."
+    )
+    preview_parser.add_argument(
+        "--width", type=int, default=1280, help="Preview width; height preserves aspect ratio."
+    )
+    preview_parser.add_argument(
+        "--overwrite", action="store_true", help="Replace an existing preview."
+    )
+    preview_parser.add_argument(
         "--json", action="store_true", help="Emit the result paths as JSON."
     )
     return parser
@@ -315,6 +334,39 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"ASS: {ass_path}")
             print(f"Style: {result['style']}")
             print(f"Cues: {len(transcript.segments)}")
+        return 0
+
+    if args.command == "create-preview":
+        output = args.output or config.output.workspace / f"{args.input.stem}.preview.mp4"
+        if output.exists() and not args.overwrite:
+            print(
+                f"Output already exists: {output}; pass --overwrite to replace it",
+                file=sys.stderr,
+            )
+            return 1
+        try:
+            preview_path = create_preview(
+                args.input,
+                args.subtitles,
+                output,
+                ffmpeg_path=config.tools.ffmpeg,
+                preview_width=args.width,
+                overwrite=args.overwrite,
+            )
+        except (VideoMcpError, ValueError, OSError) as exc:
+            print(f"Render error: {exc}", file=sys.stderr)
+            return 1
+        result = {
+            "input": str(args.input.resolve()),
+            "subtitles": str(args.subtitles.resolve()),
+            "preview": str(preview_path),
+            "width": args.width,
+        }
+        if args.json:
+            print(json.dumps(result, indent=2))
+        else:
+            print(f"Preview: {preview_path}")
+            print(f"Width: {args.width}")
         return 0
 
     parser.error(f"Unknown command: {args.command}")
