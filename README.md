@@ -95,6 +95,20 @@ This creates a job directory containing `source.json`, normalized audio,
 `subtitles.ass`, and `captioned-preview.mp4`. Re-running reuses existing
 artifacts; use `--overwrite` to regenerate them.
 
+Create an editable Kdenlive project from the generated SRT:
+
+```powershell
+uv run video-mcp --config video-mcp.example.yaml kdenlive `
+  "C:\Videos\Test Video.mp4" `
+  --subtitles "work\Test Video\subtitles.srt"
+```
+
+The project defaults to `work\Test Video-captioned.kdenlive` and writes the
+required sibling `Test Video-captioned.kdenlive.srt`. Use `--output` to choose
+another project path and `--overwrite` to replace existing project assets.
+Editable Kdenlive export currently requires SRT; ASS remains the asset used
+for FFmpeg burned-in previews.
+
 # Codex Implementation Brief — Windows Local Video Subtitle MCP
 
 ## Goal
@@ -854,7 +868,7 @@ GPU VRAM
 Command:
 
 ```text
-video-mcp kdenlive input.mp4 --subtitles subtitles.ass
+video-mcp kdenlive input.mp4 --subtitles subtitles.srt
 ```
 
 should produce:
