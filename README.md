@@ -71,6 +71,17 @@ The initial `clean` preset uses a readable white Arial style with outline and
 shadow settings, and the ASS play resolution can be adjusted with `--width`
 and `--height`.
 
+Create a fast burned-in preview from the source video and ASS file:
+
+```powershell
+uv run video-mcp --config video-mcp.example.yaml create-preview `
+  "C:\Videos\Test Video.mp4" `
+  "work\Test Video.ass"
+```
+
+Preview rendering uses FFmpeg, preserves the source video, and defaults to a
+1280-pixel-wide H.264/AAC output. Use `--width` and `--overwrite` as needed.
+
 # Codex Implementation Brief — Windows Local Video Subtitle MCP
 
 ## Goal

@@ -67,3 +67,7 @@ class InvalidTranscriptOutput(VideoMcpError):
 
 class SubtitleGenerationFailed(VideoMcpError):
     """Raised when normalized subtitle data cannot produce a valid file."""
+
+
+class RenderFailed(ExternalCommandFailed):
+    """Raised when FFmpeg cannot render a subtitled video."""
