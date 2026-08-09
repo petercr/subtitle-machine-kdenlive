@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from video_mcp.asr.base import TranscriptionOptions
-from video_mcp.asr.whisper_cpp import WhisperCppBackend
+from video_mcp.asr.factory import create_asr_backend
 from video_mcp.config import AppConfig
 from video_mcp.media.ffmpeg import extract_audio
 from video_mcp.media.probe import probe_video
@@ -102,7 +102,7 @@ def caption_video(
         )
 
     if options.overwrite or not transcript_raw_json.exists():
-        backend = WhisperCppBackend(config.tools.whisper_cpp, config.asr.model)
+        backend = create_asr_backend(config)
         transcript = backend.transcribe(
             audio_wav,
             TranscriptionOptions(

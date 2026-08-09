@@ -21,6 +21,7 @@ class ToolConfig:
     ffmpeg: Path = Path("ffmpeg")
     ffprobe: Path = Path("ffprobe")
     whisper_cpp: Path = Path("whisper-cli")
+    parakeet: Path = Path("parakeet-cli")
     kdenlive: Path = Path("kdenlive")
     melt: Path = Path("melt")
     llama_cpp: Path = Path("llama-cli")
@@ -63,6 +64,7 @@ ENVIRONMENT_OVERRIDES: dict[str, tuple[str, str]] = {
     "VIDEO_MCP_FFMPEG": ("tools", "ffmpeg"),
     "VIDEO_MCP_FFPROBE": ("tools", "ffprobe"),
     "VIDEO_MCP_WHISPER_CPP": ("tools", "whisper_cpp"),
+    "VIDEO_MCP_PARAKEET": ("tools", "parakeet"),
     "VIDEO_MCP_KDENLIVE": ("tools", "kdenlive"),
     "VIDEO_MCP_MELT": ("tools", "melt"),
     "VIDEO_MCP_LLAMA_CPP": ("tools", "llama_cpp"),
@@ -153,6 +155,7 @@ def _build_config(
             ffmpeg=_tool_path(tools.get("ffmpeg", "ffmpeg"), base_dir),
             ffprobe=_tool_path(tools.get("ffprobe", "ffprobe"), base_dir),
             whisper_cpp=_tool_path(tools.get("whisper_cpp", "whisper-cli"), base_dir),
+            parakeet=_tool_path(tools.get("parakeet", "parakeet-cli"), base_dir),
             kdenlive=_tool_path(tools.get("kdenlive", "kdenlive"), base_dir),
             melt=_tool_path(tools.get("melt", "melt"), base_dir),
             llama_cpp=_tool_path(tools.get("llama_cpp", "llama-cli"), base_dir),

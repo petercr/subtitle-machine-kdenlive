@@ -60,14 +60,11 @@ def test_caption_video_creates_expected_job_artifacts(monkeypatch, tmp_path):
     monkeypatch.setattr(captioning_module, "extract_audio", fake_extract)
 
     class FakeBackend:
-        def __init__(self, executable, model):
-            pass
-
         def transcribe(self, audio_path, options):
             calls["transcribe"] += 1
             return _transcript()
 
-    monkeypatch.setattr(captioning_module, "WhisperCppBackend", FakeBackend)
+    monkeypatch.setattr(captioning_module, "create_asr_backend", lambda config: FakeBackend())
 
     def fake_preview(input_path, subtitles_path, output_path, **kwargs):
         calls["preview"] += 1
@@ -113,14 +110,11 @@ def test_caption_video_reuses_existing_artifacts(monkeypatch, tmp_path):
     monkeypatch.setattr(captioning_module, "extract_audio", fake_extract)
 
     class FakeBackend:
-        def __init__(self, executable, model):
-            pass
-
         def transcribe(self, audio_path, options):
             calls["transcribe"] += 1
             return _transcript()
 
-    monkeypatch.setattr(captioning_module, "WhisperCppBackend", FakeBackend)
+    monkeypatch.setattr(captioning_module, "create_asr_backend", lambda config: FakeBackend())
 
     def fake_preview(input_path, subtitles_path, output_path, **kwargs):
         calls["preview"] += 1

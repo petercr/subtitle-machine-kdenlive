@@ -15,7 +15,7 @@ uv run pytest
 Copy `video-mcp.example.yaml` to the machine-local `video-mcp.yaml` when you
 want to customize executable, model, or output paths. The local file is ignored
 by Git. Environment variables such as `VIDEO_MCP_FFMPEG`,
-`VIDEO_MCP_WHISPER_CPP`, `VIDEO_MCP_ASR_MODEL`, `VIDEO_MCP_ASR_DEVICE`, and
+`VIDEO_MCP_WHISPER_CPP`, `VIDEO_MCP_PARAKEET`, `VIDEO_MCP_ASR_MODEL`, `VIDEO_MCP_ASR_DEVICE`, and
 `VIDEO_MCP_WORKSPACE` override YAML values.
 
 Print the effective configuration with:
@@ -42,14 +42,16 @@ The inspection output is normalized application data from FFprobe. Audio
 extraction creates a mono, 16 kHz, 16-bit PCM WAV in the configured workspace;
 existing output is preserved unless `--overwrite` is supplied.
 
-Transcribe a normalized audio file with the configured Whisper.cpp model:
+Transcribe a normalized audio file with the configured ASR backend:
 
 ```powershell
 uv run video-mcp --config video-mcp.example.yaml transcribe "work\Test Video.wav" --device cpu
 ```
 
 This writes a versioned `*.transcript.raw.json` file containing segment and
-token timestamps. The source audio is never modified.
+token timestamps. The source audio is never modified. Whisper.cpp remains the
+default backend; Parakeet is an optional experimental backend selected with
+`asr.backend: parakeet` and a configured Q8 model path.
 
 Export normalized transcript data as SRT:
 
@@ -119,6 +121,27 @@ The MCP layer exposes the tested direct services for inspection, local
 transcription, captioning, preview rendering, SRT/ASS export, and Kdenlive
 project creation. It does not duplicate media-processing logic or require a
 running Kdenlive GUI.
+
+The experimental Parakeet backend can be selected in `video-mcp.yaml`:
+
+```yaml
+tools:
+  parakeet: "C:/Tools/whisper/Release/parakeet-cli.exe"
+asr:
+  backend: parakeet
+  model: "C:/Models/parakeet/ggml-parakeet-tdt-0.6b-v3-q8_0.bin"
+```
+
+Compare it with Whisper on normalized WAV fixtures using:
+
+```powershell
+uv run python scripts/benchmark_asr.py --backend parakeet `
+  --model "C:\Models\parakeet\ggml-parakeet-tdt-0.6b-v3-q8_0.bin" `
+  --reference-dir benchmarks/references work\sample\audio.wav
+```
+
+Results belong in `benchmarks/asr-results.md`; model weights and generated
+audio stay outside Git.
 
 # Codex Implementation Brief — Windows Local Video Subtitle MCP
 
