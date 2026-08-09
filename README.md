@@ -61,6 +61,16 @@ SRT cue numbers are generated deterministically, timestamps are validated for
 ordering and overlap, and existing output is preserved unless `--overwrite` is
 supplied.
 
+Export the same transcript as styled ASS for FFmpeg rendering or Kdenlive:
+
+```powershell
+uv run video-mcp --config video-mcp.example.yaml export-ass "work\Test Video.transcript.raw.json"
+```
+
+The initial `clean` preset uses a readable white Arial style with outline and
+shadow settings, and the ASS play resolution can be adjusted with `--width`
+and `--height`.
+
 # Codex Implementation Brief — Windows Local Video Subtitle MCP
 
 ## Goal
