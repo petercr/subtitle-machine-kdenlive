@@ -12,6 +12,12 @@ uv run video-mcp --version
 uv run pytest
 ```
 
+GitHub Actions runs the locked test suite and Python compilation checks on
+both Ubuntu and Windows for pull requests and pushes to `main`. The local
+smoke test remains opt-in because hosted runners do not provide the native
+FFmpeg, Whisper.cpp, Kdenlive, or model installation used by the full local
+workflow.
+
 Copy `video-mcp.example.yaml` to the machine-local `video-mcp.yaml` when you
 want to customize executable, model, or output paths. The local file is ignored
 by Git. Environment variables such as `VIDEO_MCP_FFMPEG`,
