@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import asdict, dataclass
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any, Mapping
 
 import yaml
@@ -242,7 +242,7 @@ def _boolean(value: Any, field_name: str) -> bool:
 
 def _tool_path(value: Any, base_dir: Path) -> Path:
     path = Path(str(value)).expanduser()
-    if path.is_absolute() or any(separator in str(value) for separator in ("/", "\\")):
+    if _is_absolute_path(path) or any(separator in str(value) for separator in ("/", "\\")):
         return _resolve_relative(path, base_dir)
     return path
 
@@ -252,9 +252,15 @@ def _resolved_path(value: Any, base_dir: Path) -> Path:
 
 
 def _resolve_relative(path: Path, base_dir: Path) -> Path:
-    if path.is_absolute():
-        return path.resolve()
+    if _is_absolute_path(path):
+        return path.resolve() if path.is_absolute() else path
     return (base_dir / path).resolve()
+
+
+def _is_absolute_path(path: Path) -> bool:
+    """Recognize native and Windows absolute paths on every host platform."""
+
+    return path.is_absolute() or PureWindowsPath(str(path)).is_absolute()
 
 
 def _serialize_paths(value: Any) -> Any:
