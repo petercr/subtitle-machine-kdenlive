@@ -42,6 +42,17 @@ class SubtitleConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class LLMConfig:
+    """Optional local transcript-cleanup model settings."""
+
+    enabled: bool = False
+    model: Path = Path("C:/Models/llama/Qwen3.5-2B-Q4_K_M.gguf")
+    max_segments_per_chunk: int = 8
+    max_chars_per_chunk: int = 2400
+    max_tokens: int = 512
+
+
+@dataclass(frozen=True, slots=True)
 class OutputConfig:
     workspace: Path = Path("work")
 
@@ -51,6 +62,7 @@ class AppConfig:
     tools: ToolConfig = ToolConfig()
     asr: ASRConfig = ASRConfig()
     subtitles: SubtitleConfig = SubtitleConfig()
+    llm: LLMConfig = LLMConfig()
     output: OutputConfig = OutputConfig()
     source_path: Path | None = None
 
@@ -74,6 +86,11 @@ ENVIRONMENT_OVERRIDES: dict[str, tuple[str, str]] = {
     "VIDEO_MCP_SUBTITLE_PRESET": ("subtitles", "preset"),
     "VIDEO_MCP_MAX_CHARS_PER_LINE": ("subtitles", "max_chars_per_line"),
     "VIDEO_MCP_MAX_LINES": ("subtitles", "max_lines"),
+    "VIDEO_MCP_LLM_ENABLED": ("llm", "enabled"),
+    "VIDEO_MCP_LLM_MODEL": ("llm", "model"),
+    "VIDEO_MCP_LLM_MAX_SEGMENTS": ("llm", "max_segments_per_chunk"),
+    "VIDEO_MCP_LLM_MAX_CHARS": ("llm", "max_chars_per_chunk"),
+    "VIDEO_MCP_LLM_MAX_TOKENS": ("llm", "max_tokens"),
     "VIDEO_MCP_WORKSPACE": ("output", "workspace"),
 }
 
@@ -139,6 +156,7 @@ def _build_config(
     tools = _section(raw, "tools")
     asr = _section(raw, "asr")
     subtitles = _section(raw, "subtitles")
+    llm = _section(raw, "llm")
     output = _section(raw, "output")
 
     device = str(asr.get("device", "auto")).lower()
@@ -172,6 +190,22 @@ def _build_config(
             max_chars_per_line=max_chars,
             max_lines=max_lines,
         ),
+        llm=LLMConfig(
+            enabled=_boolean(llm.get("enabled", False), "llm.enabled"),
+            model=_resolved_path(
+                llm.get("model", "C:/Models/llama/Qwen3.5-2B-Q4_K_M.gguf"),
+                base_dir,
+            ),
+            max_segments_per_chunk=_positive_int(
+                llm.get("max_segments_per_chunk", 8),
+                "llm.max_segments_per_chunk",
+            ),
+            max_chars_per_chunk=_positive_int(
+                llm.get("max_chars_per_chunk", 2400),
+                "llm.max_chars_per_chunk",
+            ),
+            max_tokens=_positive_int(llm.get("max_tokens", 512), "llm.max_tokens"),
+        ),
         output=OutputConfig(
             workspace=_resolved_path(output.get("workspace", "work"), base_dir)
         ),
@@ -193,6 +227,17 @@ def _positive_int(value: Any, field_name: str) -> int:
     if parsed <= 0:
         raise ConfigurationError(f"{field_name} must be greater than zero.")
     return parsed
+
+
+def _boolean(value: Any, field_name: str) -> bool:
+    if isinstance(value, bool):
+        return value
+    normalized = str(value).strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise ConfigurationError(f"{field_name} must be a boolean.")
 
 
 def _tool_path(value: Any, base_dir: Path) -> Path:
