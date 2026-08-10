@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from video_mcp.cli import main
-from video_mcp.config import AppConfig, ASRConfig, OutputConfig, ToolConfig
+from video_mcp.config import AppConfig, ASRConfig, OutputConfig, ToolConfig, load_config
 from video_mcp.doctor import READY, run_doctor
 
 
@@ -45,3 +45,17 @@ def test_doctor_json_output_is_structured(capsys, tmp_path):
     report = json.loads(capsys.readouterr().out)
     assert report["core_caption_pipeline"] == "NOT READY"
     assert "capabilities" in report
+
+
+def test_doctor_reports_enabled_llm_model_as_optional(tmp_path):
+    config_path = tmp_path / "video-mcp.yaml"
+    config_path.write_text(
+        f"llm:\n  enabled: true\n  model: {tmp_path / 'missing.gguf'}\n",
+        encoding="utf-8",
+    )
+
+    report = run_doctor(load_config(config_path, environ={}))
+
+    llm_model = next(item for item in report.diagnostics if item.name == "LLM cleanup model")
+    assert llm_model.status == "NOT INSTALLED"
+    assert llm_model.optional is True

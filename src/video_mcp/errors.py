@@ -69,6 +69,14 @@ class SubtitleGenerationFailed(VideoMcpError):
     """Raised when normalized subtitle data cannot produce a valid file."""
 
 
+class CleanupFailed(ExternalCommandFailed):
+    """Raised when the optional local transcript cleanup command fails."""
+
+
+class InvalidCleanupOutput(VideoMcpError):
+    """Raised when a cleanup model violates the required response schema."""
+
+
 class RenderFailed(ExternalCommandFailed):
     """Raised when FFmpeg cannot render a subtitled video."""
 

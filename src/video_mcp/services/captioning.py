@@ -13,6 +13,7 @@ from video_mcp.media.ffmpeg import extract_audio
 from video_mcp.media.probe import probe_video
 from video_mcp.media.render import create_preview
 from video_mcp.models import MediaInfo, Transcript
+from video_mcp.services.cleanup import clean_transcript
 from video_mcp.subtitles.ass import write_ass
 from video_mcp.subtitles.srt import write_srt
 
@@ -115,13 +116,19 @@ def caption_video(
     else:
         transcript = _read_transcript(transcript_raw_json)
 
+    cleanup_warnings: list[str] = []
     if options.overwrite or not transcript_cleaned_json.exists():
-        _write_json(transcript_cleaned_json, transcript.as_dict())
+        cleanup_result = clean_transcript(transcript, config)
+        cleaned_transcript = cleanup_result.transcript
+        cleanup_warnings = cleanup_result.warnings
+        _write_json(transcript_cleaned_json, cleaned_transcript.as_dict())
+    else:
+        cleaned_transcript = _read_transcript(transcript_cleaned_json)
     if options.overwrite or not subtitles_srt.exists():
-        write_srt(transcript, subtitles_srt, overwrite=options.overwrite)
+        write_srt(cleaned_transcript, subtitles_srt, overwrite=options.overwrite)
     if options.overwrite or not subtitles_ass.exists():
         write_ass(
-            transcript,
+            cleaned_transcript,
             subtitles_ass,
             style=options.style,
             play_res_x=media.video.width if media.video and media.video.width else 1920,
@@ -152,9 +159,9 @@ def caption_video(
         subtitles_srt=subtitles_srt.resolve(),
         subtitles_ass=subtitles_ass.resolve(),
         preview_mp4=preview_result.resolve() if preview_result else None,
-        language=transcript.language,
-        segment_count=len(transcript.segments),
-        warnings=["Deterministic cleanup is not configured; cleaned transcript matches raw transcript."],
+        language=cleaned_transcript.language,
+        segment_count=len(cleaned_transcript.segments),
+        warnings=cleanup_warnings,
     )
 
 

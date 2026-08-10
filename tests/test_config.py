@@ -13,6 +13,8 @@ def test_defaults_are_resolved_from_current_directory(monkeypatch, tmp_path):
     assert config.tools.ffmpeg == Path("ffmpeg")
     assert config.asr.device == "auto"
     assert config.asr.model == Path("C:/Models/whisper/ggml-small.bin")
+    assert config.llm.enabled is False
+    assert config.llm.model == Path("C:/Models/llama/Qwen3.5-2B-Q4_K_M.gguf")
     assert config.output.workspace == tmp_path / "work"
     assert config.source_path is None
 
@@ -49,11 +51,23 @@ def test_environment_overrides_yaml(tmp_path):
         environ={
             "VIDEO_MCP_ASR_DEVICE": "cuda",
             "VIDEO_MCP_MAX_LINES": "3",
+            "VIDEO_MCP_LLM_ENABLED": "true",
+            "VIDEO_MCP_LLM_MAX_SEGMENTS": "4",
         },
     )
 
     assert config.asr.device == "cuda"
     assert config.subtitles.max_lines == 3
+    assert config.llm.enabled is True
+    assert config.llm.max_segments_per_chunk == 4
+
+
+def test_invalid_llm_enabled_is_rejected(tmp_path):
+    config_path = tmp_path / "video-mcp.yaml"
+    config_path.write_text("llm:\n  enabled: maybe\n", encoding="utf-8")
+
+    with pytest.raises(ConfigurationError, match="llm.enabled"):
+        load_config(config_path, environ={})
 
 
 @pytest.mark.parametrize("device", ["gpu", "automatic", ""])

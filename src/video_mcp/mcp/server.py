@@ -14,6 +14,7 @@ from video_mcp.media.probe import probe_video
 from video_mcp.media.render import create_preview
 from video_mcp.models import Transcript
 from video_mcp.services.captioning import CaptionOptions, caption_video
+from video_mcp.services.cleanup import clean_transcript_file
 from video_mcp.services.kdenlive import create_kdenlive_project
 from video_mcp.services.transcription import transcribe_audio
 from video_mcp.subtitles.ass import write_ass
@@ -190,6 +191,26 @@ def video_render(
         preview_width,
         overwrite,
     )
+
+
+@mcp.tool(
+    name="subtitle.clean",
+    description="Clean a transcript with the optional local LLM and deterministic fallback.",
+    structured_output=True,
+)
+def subtitle_clean(
+    transcript_path: str,
+    config_path: str | None = None,
+    output_path: str | None = None,
+    overwrite: bool = False,
+) -> dict[str, Any]:
+    result = clean_transcript_file(
+        transcript_path,
+        _config(config_path),
+        output_path=output_path,
+        overwrite=overwrite,
+    )
+    return result.as_dict()
 
 
 @mcp.tool(

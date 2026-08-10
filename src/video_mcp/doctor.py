@@ -76,6 +76,11 @@ def run_doctor(config: AppConfig) -> DoctorReport:
         _tool_diagnostic("MLT/melt", config.tools.melt),
         _tool_diagnostic("Parakeet", config.tools.parakeet, args=("-h",), optional=True),
         _tool_diagnostic("llama.cpp", config.tools.llama_cpp, optional=True),
+        *(
+            (_model_diagnostic(config.llm.model, name="LLM cleanup model", optional=True),)
+            if config.llm.enabled
+            else ()
+        ),
         _workspace_diagnostic(config.output.workspace),
     )
 
@@ -138,11 +143,14 @@ def _tool_diagnostic(
     return Diagnostic(name, READY, f"{executable} — {output or 'available'}", optional)
 
 
-def _model_diagnostic(model_path: Path) -> Diagnostic:
+def _model_diagnostic(
+    model_path: Path, *, name: str = "Whisper model", optional: bool = False
+) -> Diagnostic:
     if not model_path.is_file():
-        return Diagnostic("Whisper model", NOT_FOUND, f"Configured path: {model_path}")
+        status = NOT_INSTALLED if optional else NOT_FOUND
+        return Diagnostic(name, status, f"Configured path: {model_path}", optional)
     size_mb = model_path.stat().st_size / (1024 * 1024)
-    return Diagnostic("Whisper model", READY, f"{model_path} ({size_mb:.0f} MiB)")
+    return Diagnostic(name, READY, f"{model_path} ({size_mb:.0f} MiB)", optional)
 
 
 def _nvidia_diagnostic() -> Diagnostic:

@@ -12,6 +12,13 @@ asr:
   device: auto
   model: "C:/Models/whisper/ggml-small.bin"
 
+llm:
+  enabled: false
+  model: "C:/Models/llama/Qwen3.5-2B-Q4_K_M.gguf"
+  max_segments_per_chunk: 8
+  max_chars_per_chunk: 2400
+  max_tokens: 512
+
 subtitles:
   preset: clean
   max_chars_per_line: 42
