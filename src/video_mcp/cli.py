@@ -18,6 +18,7 @@ from video_mcp.media.probe import format_media_info, probe_video
 from video_mcp.media.render import create_preview
 from video_mcp.models import Transcript
 from video_mcp.services.captioning import CaptionOptions, caption_video
+from video_mcp.services.cleanup import clean_transcript_file
 from video_mcp.services.kdenlive import create_kdenlive_project
 from video_mcp.services.transcription import transcribe_audio
 from video_mcp.subtitles.ass import write_ass
@@ -99,6 +100,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     transcribe_parser.add_argument(
         "--json", action="store_true", help="Emit the result paths as JSON."
+    )
+    clean_parser = commands.add_parser(
+        "clean",
+        help="Clean a normalized transcript with deterministic or local-LLM cleanup.",
+    )
+    clean_parser.add_argument("input", type=Path, help="Input transcript JSON path.")
+    clean_parser.add_argument(
+        "--output", type=Path, help="Cleaned transcript path (defaults inside workspace)."
+    )
+    clean_parser.add_argument(
+        "--overwrite", action="store_true", help="Replace an existing cleaned transcript."
+    )
+    clean_parser.add_argument(
+        "--json", action="store_true", help="Emit the result as JSON."
     )
     srt_parser = commands.add_parser(
         "export-srt",
@@ -302,6 +317,28 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"Transcript: {transcription.transcript_path}")
             print(f"Language: {transcription.language or 'unknown'}")
             print(f"Segments: {transcription.segment_count}")
+        return 0
+
+    if args.command == "clean":
+        output = args.output or config.output.workspace / f"{args.input.stem}.cleaned.json"
+        try:
+            result = clean_transcript_file(
+                args.input,
+                config,
+                output_path=output,
+                overwrite=args.overwrite,
+            )
+        except (VideoMcpError, ValueError, OSError, json.JSONDecodeError) as exc:
+            print(f"Cleanup error: {exc}", file=sys.stderr)
+            return 1
+        if args.json:
+            print(json.dumps(result.as_dict(), indent=2))
+        else:
+            print(f"Transcript: {result.output_path}")
+            print(f"Segments: {result.segment_count}")
+            print(f"LLM cleanup: {'used' if result.used_llm else 'not used'}")
+            for warning in result.warnings:
+                print(f"Warning: {warning}")
         return 0
 
     if args.command == "export-srt":

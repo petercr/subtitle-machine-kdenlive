@@ -120,6 +120,22 @@ or response is unavailable or invalid, the pipeline records a warning and
 falls back to deterministic cleanup. The same service is available through
 the MCP `subtitle.clean` tool.
 
+The cleanup service is also available directly from the CLI:
+
+```powershell
+uv run video-mcp --config video-mcp.example.yaml clean `
+  "work\Test Video.transcript.raw.json" `
+  --output "work\Test Video.transcript.cleaned.json"
+```
+
+Run the local-tool smoke test to generate a tiny synthetic video and verify
+FFprobe, FFmpeg audio extraction, SRT/ASS export, and preview rendering. It
+does not invoke Whisper or download any model weights:
+
+```powershell
+uv run python scripts/smoke_test.py --config video-mcp.example.yaml
+```
+
 Create an editable Kdenlive project from the generated SRT:
 
 ```powershell
