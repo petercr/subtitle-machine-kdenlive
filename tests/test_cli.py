@@ -20,7 +20,8 @@ def test_cli_prints_effective_config(capsys, monkeypatch, tmp_path):
     assert '"device": "auto"' in captured.out
 
 
-def test_cli_cleans_transcript_with_deterministic_fallback(capsys, tmp_path):
+def test_cli_cleans_transcript_with_deterministic_fallback(capsys, monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
     transcript_path = tmp_path / "raw.json"
     output_path = tmp_path / "cleaned.json"
     transcript_path.write_text(

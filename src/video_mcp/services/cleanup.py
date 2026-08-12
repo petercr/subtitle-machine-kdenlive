@@ -10,7 +10,11 @@ from pathlib import Path
 from video_mcp.config import AppConfig
 from video_mcp.errors import VideoMcpError
 from video_mcp.models import Transcript
-from video_mcp.subtitles.cleaner import DeterministicCleaner, LocalLLMCleaner
+from video_mcp.subtitles.cleaner import (
+    DeterministicCleaner,
+    LocalLLMCleaner,
+    LocalLLMServerCleaner,
+)
 from video_mcp.subtitles.formatter import format_transcript
 
 logger = logging.getLogger(__name__)
@@ -55,12 +59,15 @@ def clean_transcript(transcript: Transcript, config: AppConfig) -> CleanupResult
             warnings=["Local LLM cleanup is disabled; deterministic cleanup was used."],
         )
 
-    cleaner = LocalLLMCleaner(
-        config.tools.llama_cpp,
-        config.llm.model,
+    cleaner_kwargs = dict(
         max_segments_per_chunk=config.llm.max_segments_per_chunk,
         max_chars_per_chunk=config.llm.max_chars_per_chunk,
         max_tokens=config.llm.max_tokens,
+    )
+    cleaner = (
+        LocalLLMServerCleaner(config.llm.server_url, **cleaner_kwargs)
+        if config.llm.server_url
+        else LocalLLMCleaner(config.tools.llama_cpp, config.llm.model, **cleaner_kwargs)
     )
     try:
         cleaned = cleaner.clean(transcript)

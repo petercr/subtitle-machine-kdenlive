@@ -47,6 +47,7 @@ class LLMConfig:
 
     enabled: bool = False
     model: Path = Path("C:/Models/llama/Qwen3.5-2B-Q4_K_M.gguf")
+    server_url: str | None = None
     max_segments_per_chunk: int = 8
     max_chars_per_chunk: int = 2400
     max_tokens: int = 512
@@ -88,6 +89,7 @@ ENVIRONMENT_OVERRIDES: dict[str, tuple[str, str]] = {
     "VIDEO_MCP_MAX_LINES": ("subtitles", "max_lines"),
     "VIDEO_MCP_LLM_ENABLED": ("llm", "enabled"),
     "VIDEO_MCP_LLM_MODEL": ("llm", "model"),
+    "VIDEO_MCP_LLM_SERVER_URL": ("llm", "server_url"),
     "VIDEO_MCP_LLM_MAX_SEGMENTS": ("llm", "max_segments_per_chunk"),
     "VIDEO_MCP_LLM_MAX_CHARS": ("llm", "max_chars_per_chunk"),
     "VIDEO_MCP_LLM_MAX_TOKENS": ("llm", "max_tokens"),
@@ -196,6 +198,7 @@ def _build_config(
                 llm.get("model", "C:/Models/llama/Qwen3.5-2B-Q4_K_M.gguf"),
                 base_dir,
             ),
+            server_url=_optional_url(llm.get("server_url")),
             max_segments_per_chunk=_positive_int(
                 llm.get("max_segments_per_chunk", 8),
                 "llm.max_segments_per_chunk",
@@ -227,6 +230,17 @@ def _positive_int(value: Any, field_name: str) -> int:
     if parsed <= 0:
         raise ConfigurationError(f"{field_name} must be greater than zero.")
     return parsed
+
+
+def _optional_url(value: Any) -> str | None:
+    if value is None:
+        return None
+    url = str(value).strip()
+    if not url:
+        return None
+    if not url.startswith(("http://", "https://")):
+        raise ConfigurationError("llm.server_url must be an HTTP URL.")
+    return url
 
 
 def _boolean(value: Any, field_name: str) -> bool:

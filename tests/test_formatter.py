@@ -1,5 +1,5 @@
 from video_mcp.models import SubtitleSegment, Transcript, Word
-from video_mcp.subtitles.formatter import format_transcript
+from video_mcp.subtitles.formatter import _words_text, format_transcript
 
 
 def test_formatter_splits_long_word_timestamp_segment_at_sentence_boundaries():
@@ -64,3 +64,7 @@ def test_formatter_leaves_compact_segments_unchanged():
     transcript = Transcript(language="en", duration_ms=1000, segments=[segment])
 
     assert format_transcript(transcript, max_chars=42).segments == [segment]
+
+
+def test_formatter_attaches_contraction_suffixes_to_the_previous_word():
+    assert _words_text([Word(0, 100, "That"), Word(100, 200, "'s")]) == "That's"

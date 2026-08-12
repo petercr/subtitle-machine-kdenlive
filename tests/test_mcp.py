@@ -69,7 +69,8 @@ def test_mcp_dispatches_subtitle_export_with_structured_output(tmp_path):
     assert "Hello MCP" in output_path.read_text(encoding="utf-8")
 
 
-def test_mcp_dispatches_subtitle_clean_with_deterministic_fallback(tmp_path):
+def test_mcp_dispatches_subtitle_clean_with_deterministic_fallback(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
     transcript_path = tmp_path / "transcript.json"
     transcript_path.write_text(
         json.dumps(

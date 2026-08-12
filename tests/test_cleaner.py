@@ -6,7 +6,11 @@ from video_mcp.config import AppConfig, ASRConfig, LLMConfig, OutputConfig, Tool
 from video_mcp.errors import InvalidCleanupOutput
 from video_mcp.models import SubtitleSegment, Transcript
 from video_mcp.services.cleanup import clean_transcript
-from video_mcp.subtitles.cleaner import DeterministicCleaner, LocalLLMCleaner
+from video_mcp.subtitles.cleaner import (
+    DeterministicCleaner,
+    LocalLLMCleaner,
+    LocalLLMServerCleaner,
+)
 from video_mcp.subtitles import cleaner as cleaner_module
 
 
@@ -83,6 +87,57 @@ def test_local_llm_cleaner_rejects_unknown_segment_ids(monkeypatch, tmp_path):
 
     with pytest.raises(InvalidCleanupOutput, match="unknown segment id"):
         LocalLLMCleaner("llama-cli", model).clean(_transcript())
+
+
+def test_local_llm_server_cleaner_uses_strict_json_schema(monkeypatch):
+    calls = []
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self):
+            payload = {
+                "choices": [
+                    {
+                        "message": {
+                            "content": json.dumps(
+                                {
+                                    "segments": [
+                                        {"id": "seg-1", "text": "Hello, world."},
+                                        {"id": "seg-2", "text": "This is fine."},
+                                        {"id": "seg-3", "text": "Another line."},
+                                    ]
+                                }
+                            )
+                        }
+                    }
+                ]
+            }
+            return json.dumps(payload).encode("utf-8")
+
+    def fake_urlopen(request, *, timeout):
+        calls.append((request, timeout))
+        return FakeResponse()
+
+    monkeypatch.setattr(cleaner_module, "urlopen", fake_urlopen)
+    cleaned = LocalLLMServerCleaner("http://127.0.0.1:8087/v1/chat/completions").clean(
+        _transcript()
+    )
+
+    request, timeout = calls[0]
+    payload = json.loads(request.data)
+    assert timeout == 120
+    assert payload["response_format"]["type"] == "json_schema"
+    assert payload["response_format"]["json_schema"]["strict"] is True
+    assert [segment.text for segment in cleaned.segments] == [
+        "Hello, world.",
+        "This is fine.",
+        "Another line.",
+    ]
 
 
 def test_cleanup_service_falls_back_when_llm_is_unavailable(tmp_path):
