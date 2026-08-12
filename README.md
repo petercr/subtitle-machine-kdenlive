@@ -18,6 +18,10 @@ smoke test remains opt-in because hosted runners do not provide the native
 FFmpeg, Whisper.cpp, Kdenlive, or model installation used by the full local
 workflow.
 
+Before creating a version tag, follow the [release checklist](docs/release-checklist.md)
+to repeat the locked checks and validate the documented workflow on a clean
+Windows machine.
+
 Copy `video-mcp.example.yaml` to the machine-local `video-mcp.yaml` when you
 want to customize executable, model, or output paths. The local file is ignored
 by Git. Environment variables such as `VIDEO_MCP_FFMPEG`,
