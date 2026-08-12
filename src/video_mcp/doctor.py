@@ -70,6 +70,7 @@ def run_doctor(config: AppConfig) -> DoctorReport:
         _tool_diagnostic("FFmpeg", config.tools.ffmpeg, args=("-version",)),
         _tool_diagnostic("FFprobe", config.tools.ffprobe, args=("-version",)),
         _tool_diagnostic("Whisper.cpp", config.tools.whisper_cpp, args=("-h",)),
+        _whisper_gpu_diagnostic(config.tools.whisper_cpp),
         _model_diagnostic(config.asr.model),
         _nvidia_diagnostic(),
         _tool_diagnostic("Kdenlive", config.tools.kdenlive),
@@ -151,6 +152,39 @@ def _model_diagnostic(
         return Diagnostic(name, status, f"Configured path: {model_path}", optional)
     size_mb = model_path.stat().st_size / (1024 * 1024)
     return Diagnostic(name, READY, f"{model_path} ({size_mb:.0f} MiB)", optional)
+
+
+def _whisper_gpu_diagnostic(configured_path: Path) -> Diagnostic:
+    """Report whether a CUDA backend library is installed beside Whisper.cpp."""
+
+    executable = _resolve_executable(configured_path)
+    if executable is None:
+        return Diagnostic(
+            "Whisper GPU",
+            NOT_INSTALLED,
+            "Whisper.cpp executable was not found",
+            optional=True,
+        )
+
+    backend_files = sorted(
+        path.name
+        for path in executable.parent.iterdir()
+        if path.is_file()
+        and any(token in path.name.lower() for token in ("cuda", "cublas"))
+    )
+    if backend_files:
+        return Diagnostic(
+            "Whisper GPU",
+            READY,
+            f"{executable} — {', '.join(backend_files)}",
+            optional=True,
+        )
+    return Diagnostic(
+        "Whisper GPU",
+        NOT_INSTALLED,
+        f"No CUDA backend library found beside {executable}",
+        optional=True,
+    )
 
 
 def _nvidia_diagnostic() -> Diagnostic:

@@ -132,6 +132,32 @@ def test_whisper_auto_retries_on_cpu_after_failure(monkeypatch, tmp_path):
     assert "-ng" in calls[1]
 
 
+def test_whisper_cuda_requests_gpu_device(monkeypatch, tmp_path):
+    audio_path = tmp_path / "audio.wav"
+    model = tmp_path / "model.bin"
+    audio_path.write_bytes(b"audio")
+    model.write_bytes(b"model")
+    calls = []
+
+    def fake_run(command, **kwargs):
+        calls.append(command)
+        output_base = Path(command[command.index("-of") + 1])
+        output_base.with_suffix(".json").write_text(
+            json.dumps(_whisper_payload()), encoding="utf-8"
+        )
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(whisper_module.subprocess, "run", fake_run)
+
+    WhisperCppBackend("whisper-cli", model).transcribe(
+        audio_path,
+        TranscriptionOptions(device="cuda"),
+    )
+
+    assert calls[0][calls[0].index("-dev") + 1] == "0"
+    assert "-ng" not in calls[0]
+
+
 def test_whisper_backend_requires_model(tmp_path):
     audio_path = tmp_path / "audio.wav"
     audio_path.write_bytes(b"audio")

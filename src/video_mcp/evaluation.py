@@ -22,6 +22,7 @@ class ASRBenchmarkResult:
     """Measured output from one ASR backend run."""
 
     backend: str
+    device: str
     input_path: Path
     audio_duration_seconds: float | None
     elapsed_seconds: float
@@ -54,6 +55,7 @@ def benchmark_asr(
     audio = Path(input_path).expanduser().resolve()
     duration = audio_duration_seconds(audio)
     backend_name = config.asr.backend
+    requested_device = device or config.asr.device
     started = time.perf_counter()
     try:
         transcript = create_asr_backend(config).transcribe(
@@ -68,6 +70,7 @@ def benchmark_asr(
         elapsed = time.perf_counter() - started
         return ASRBenchmarkResult(
             backend=backend_name,
+            device=requested_device,
             input_path=audio,
             audio_duration_seconds=duration,
             elapsed_seconds=elapsed,
@@ -83,6 +86,7 @@ def benchmark_asr(
     hypothesis = transcript_text(transcript)
     return ASRBenchmarkResult(
         backend=backend_name,
+        device=requested_device,
         input_path=audio,
         audio_duration_seconds=duration,
         elapsed_seconds=elapsed,

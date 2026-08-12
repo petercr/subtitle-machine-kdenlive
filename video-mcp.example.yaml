@@ -1,7 +1,7 @@
 tools:
   ffmpeg: "C:/Users/pcruc/AppData/Local/Microsoft/WinGet/Links/ffmpeg.exe"
   ffprobe: "C:/Users/pcruc/AppData/Local/Microsoft/WinGet/Links/ffprobe.exe"
-  whisper_cpp: "C:/Tools/whisper/Release/whisper-cli.exe"
+  whisper_cpp: "C:/Tools/whisper-cuda/12.4/Release/whisper-cli.exe"
   parakeet: "parakeet-cli"
   kdenlive: "C:/Program Files/Kdenlive/bin/kdenlive.exe"
   melt: "C:/Program Files/Kdenlive/bin/melt.exe"

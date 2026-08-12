@@ -60,6 +60,24 @@ token timestamps. The source audio is never modified. Whisper.cpp remains the
 default backend; Parakeet is an optional experimental backend selected with
 `asr.backend: parakeet` and a configured Q8 model path.
 
+Select Whisper execution with `--device cpu`, `--device cuda`, or
+`--device auto`. CPU adds Whisper.cpp's `--no-gpu` flag; CUDA selects GPU
+device 0; and `auto` tries the default GPU path before retrying on CPU when
+the native command fails. `video-mcp doctor` reports NVIDIA hardware and the
+Whisper CUDA backend separately, because a GPU driver alone does not mean the
+installed Whisper binary includes CUDA support.
+
+On Windows, install the official CUDA-enabled Whisper bundle with the
+repository script. It downloads the v1.8.5 x64 cuBLAS 12.4 archive, verifies
+its SHA-256, and installs it side-by-side with any CPU build:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\install_whisper_cuda.ps1
+```
+
+The example configuration points to
+`C:/Tools/whisper-cuda/12.4/Release/whisper-cli.exe` after installation.
+
 Export normalized transcript data as SRT:
 
 ```powershell

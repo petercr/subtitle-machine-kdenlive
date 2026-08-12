@@ -51,6 +51,7 @@ def test_benchmark_asr_records_timing_and_wer(monkeypatch, tmp_path):
     result = benchmark_asr(audio, _config(tmp_path), reference_text="hello world")
 
     assert result.error is None
+    assert result.device == "auto"
     assert result.audio_duration_seconds == 1.0
     assert result.segment_count == 1
     assert result.word_error_rate == 0.0
