@@ -47,6 +47,14 @@ def test_caption_video_creates_expected_job_artifacts(monkeypatch, tmp_path):
     source.write_bytes(b"video")
     config = _config(tmp_path)
     calls = {"extract": 0, "transcribe": 0, "preview": 0}
+    log_events = []
+
+    class FakeLogger:
+        def info(self, message, **kwargs):
+            log_events.append((message, kwargs.get("extra", {})))
+
+    monkeypatch.setattr(captioning_module, "new_job_id", lambda: "job-123")
+    monkeypatch.setattr(captioning_module, "get_job_logger", lambda *args, **kwargs: FakeLogger())
 
     monkeypatch.setattr(
         captioning_module, "probe_video", lambda path, **kwargs: _media(source)
@@ -75,6 +83,7 @@ def test_caption_video_creates_expected_job_artifacts(monkeypatch, tmp_path):
 
     result = caption_video(source, config, CaptionOptions(device="cpu"))
 
+    assert result.job_id == "job-123"
     assert result.job_dir == (tmp_path / "work" / "Test Video").resolve()
     for path in (
         result.source_json,
@@ -92,6 +101,18 @@ def test_caption_video_creates_expected_job_artifacts(monkeypatch, tmp_path):
         result.transcript_cleaned_json.read_text()
     )
     assert calls == {"extract": 1, "transcribe": 1, "preview": 1}
+    assert [event[0] for event in log_events] == [
+        "Caption job started",
+        "Media inspection completed",
+        "Source metadata ready",
+        "Audio extraction completed",
+        "Transcription completed",
+        "Transcript cleanup completed",
+        "SRT export completed",
+        "ASS export completed",
+        "Preview rendering completed",
+        "Caption job completed",
+    ]
 
 
 def test_caption_video_reuses_existing_artifacts(monkeypatch, tmp_path):

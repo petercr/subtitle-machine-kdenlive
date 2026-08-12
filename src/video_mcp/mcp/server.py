@@ -10,6 +10,7 @@ from mcp.server.mcpserver import MCPServer
 
 from video_mcp import __version__
 from video_mcp.config import AppConfig, load_config
+from video_mcp.logging_config import configure_logging
 from video_mcp.media.probe import probe_video
 from video_mcp.media.render import create_preview
 from video_mcp.models import Transcript
@@ -296,6 +297,7 @@ def project_create_kdenlive(
 def main() -> None:
     """Run the MCP server over its default stdio transport."""
 
+    configure_logging()
     mcp.run(transport="stdio")
 
 

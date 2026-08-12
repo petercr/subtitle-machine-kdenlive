@@ -122,6 +122,11 @@ This creates a job directory containing `source.json`, normalized audio,
 `subtitles.ass`, and `captioned-preview.mp4`. Re-running reuses existing
 artifacts; use `--overwrite` to regenerate them.
 
+Every caption invocation returns a unique `job_id` and writes structured JSON
+stage logs to stderr (including the input, ASR backend/device, artifact paths,
+and segment count). This keeps `--json` results on stdout machine-readable
+while making it easy to trace a local job or diagnose a failed stage.
+
 Subtitle cleanup is deterministic by default. To enable optional local LLM
 cleanup, install a `llama.cpp` build that provides `llama-cli.exe`, download a
 compatible GGUF model, and set the executable and model paths in
