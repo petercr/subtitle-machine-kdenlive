@@ -37,11 +37,19 @@ virtual environment or existing project configuration.
    ```
 
 4. Run one real video through the direct caption path. Verify that it produces
-   a normalized transcript, SRT, ASS, preview, and editable Kdenlive project
-   without modifying the source video:
+   a normalized transcript, SRT, ASS, and preview without modifying the source
+   video:
 
    ```powershell
    uv run --locked video-mcp caption "C:\Videos\Test Video.mp4" --overwrite
+   ```
+
+   Create the editable Kdenlive project separately from the generated SRT and
+   verify that the project opens with the video and subtitles linked:
+
+   ```powershell
+   uv run --locked video-mcp kdenlive "C:\Videos\Test Video.mp4" `
+     --subtitles "work\Test Video\subtitles.srt" --overwrite
    ```
 
 5. If optional backends are enabled, verify each independently:
