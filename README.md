@@ -127,6 +127,11 @@ stage logs to stderr (including the input, ASR backend/device, artifact paths,
 and segment count). This keeps `--json` results on stdout machine-readable
 while making it easy to trace a local job or diagnose a failed stage.
 
+When an ASR backend provides word timestamps but coarse segments, deterministic
+formatting splits oversized speech into timestamped caption cues before SRT and
+ASS export. It favours sentence and phrase endings and uses the configured
+line capacity as its character limit.
+
 Subtitle cleanup is deterministic by default. To enable optional local LLM
 cleanup, install a `llama.cpp` build that provides `llama-cli.exe`, download a
 compatible GGUF model, and set the executable and model paths in
@@ -194,11 +199,22 @@ The experimental Parakeet backend can be selected in `video-mcp.yaml`:
 
 ```yaml
 tools:
-  parakeet: "C:/Tools/whisper/Release/parakeet-cli.exe"
+  parakeet: "C:/Tools/parakeet/build-1.9.2/bin/Release/parakeet-cli.exe"
 asr:
   backend: parakeet
   model: "C:/Models/parakeet/ggml-parakeet-tdt-0.6b-v3-q8_0.bin"
 ```
+
+On Windows, build the pinned CPU runtime and download the verified Q8 model
+with CMake and Visual Studio Build Tools installed:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\install_parakeet.ps1
+```
+
+This installs the v1.9.2 `parakeet-cli` build under `C:\Tools\parakeet` and
+the 668.8 MB model under `C:\Models\parakeet`. Parakeet remains experimental
+and Whisper.cpp remains the default backend.
 
 Compare it with Whisper on normalized WAV fixtures using:
 

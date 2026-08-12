@@ -92,7 +92,7 @@ def test_parakeet_backend_uses_safe_arguments_and_parses_stderr(monkeypatch, tmp
     assert calls[0][calls[0].index("-m") + 1] == str(model)
     assert calls[0][calls[0].index("-f") + 1] == str(audio)
     assert "-ps" in calls[0]
-    assert "-np" in calls[0]
+    assert "-np" not in calls[0]
     assert "-ng" in calls[0]
 
 

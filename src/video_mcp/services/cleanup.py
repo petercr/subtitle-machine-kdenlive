@@ -11,6 +11,7 @@ from video_mcp.config import AppConfig
 from video_mcp.errors import VideoMcpError
 from video_mcp.models import Transcript
 from video_mcp.subtitles.cleaner import DeterministicCleaner, LocalLLMCleaner
+from video_mcp.subtitles.formatter import format_transcript
 
 logger = logging.getLogger(__name__)
 PathLike = str | Path
@@ -47,8 +48,9 @@ def clean_transcript(transcript: Transcript, config: AppConfig) -> CleanupResult
 
     deterministic = DeterministicCleaner()
     if not config.llm.enabled:
+        cleaned = deterministic.clean(transcript)
         return CleanupResult(
-            transcript=deterministic.clean(transcript),
+            transcript=_format(cleaned, config),
             used_llm=False,
             warnings=["Local LLM cleanup is disabled; deterministic cleanup was used."],
         )
@@ -61,18 +63,27 @@ def clean_transcript(transcript: Transcript, config: AppConfig) -> CleanupResult
         max_tokens=config.llm.max_tokens,
     )
     try:
+        cleaned = cleaner.clean(transcript)
         return CleanupResult(
-            transcript=cleaner.clean(transcript),
+            transcript=_format(cleaned, config),
             used_llm=True,
             warnings=[],
         )
     except (VideoMcpError, ValueError) as exc:
         logger.warning("Local LLM cleanup failed; using deterministic fallback: %s", exc)
         return CleanupResult(
-            transcript=deterministic.clean(transcript),
+            transcript=_format(deterministic.clean(transcript), config),
             used_llm=False,
             warnings=[f"Local LLM cleanup failed; deterministic fallback was used: {exc}"],
         )
+
+
+def _format(transcript: Transcript, config: AppConfig) -> Transcript:
+    return format_transcript(
+        transcript,
+        max_chars=config.subtitles.max_chars_per_line * config.subtitles.max_lines,
+        max_chars_per_line=config.subtitles.max_chars_per_line,
+    )
 
 
 def clean_transcript_file(
