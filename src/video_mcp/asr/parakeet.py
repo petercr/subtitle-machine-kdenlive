@@ -146,7 +146,6 @@ class ParakeetBackend(ASRBackend):
             "-f",
             str(audio),
             "-ps",
-            "-np",
             "-t",
             str(options.threads),
         ]
@@ -163,6 +162,8 @@ class ParakeetBackend(ASRBackend):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 shell=False,
             )
             if options.process_started is not None:

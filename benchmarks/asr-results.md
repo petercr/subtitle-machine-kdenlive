@@ -45,6 +45,7 @@ usage instead report a clearly labeled whole-device memory delta.
 | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | Whisper.cpp | ggml-small.bin | cpu | videorc-session.wav (19.200 s) | 17.546 | 0.914 | 935.4 | — | — | 4 | CUDA build with `--no-gpu`; warmed local run |
 | Whisper.cpp | ggml-small.bin | cuda | videorc-session.wav (19.200 s) | 30.211 | 1.573 | 599.6 | 873.0 | — | 4 | CUDA device 0 active; VRAM is a `device_delta` because WDDM did not expose the ASR PID |
+| Parakeet | tdt-0.6b-v3-q8_0 | cpu | videorc-session.wav (19.200 s) | 3.699 | 0.193 | 781.1 | — | — | 1 | whisper.cpp v1.9.2 CPU build; word timestamps formatted into 5 SRT cues |
 
 Record qualitative timestamp and punctuation observations in the notes column
 or below each run. Resource metrics are best-effort rather than a claim of
@@ -59,7 +60,11 @@ target from whisper.cpp, using the Q8_0 model published in
 See the upstream references before downloading or building the optional
 runtime.
 
-Current local status: Parakeet runtime and model are not installed.
+Current local status: Parakeet CPU runtime and Q8 model installed and validated
+on Windows. The sample text broadly matches Whisper, with one differing proper
+noun ("video orc" versus Whisper's "video work"); no reference transcript is
+available for WER. Its raw output is one long segment, so the deterministic
+word-timestamp formatter now splits it into five readable subtitle cues.
 
 The current CUDA build initializes the GTX 1650 SUPER successfully. The
 recorded clip is short and uses the small model, so its CUDA timing includes a
