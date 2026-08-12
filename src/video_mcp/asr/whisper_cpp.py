@@ -104,6 +104,8 @@ class WhisperCppBackend(ASRBackend):
             command.append("-tr")
         if options.device == "cpu" or force_cpu:
             command.append("-ng")
+        elif options.device == "cuda":
+            command.extend(["-dev", "0"])
         return command
 
     def _run(

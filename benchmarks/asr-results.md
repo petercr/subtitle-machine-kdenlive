@@ -34,14 +34,14 @@ is faster.
 
 | Date | Windows | CPU | RAM | GPU | Driver | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| | | | | | | |
+| 2026-08-12 | Windows 11 10.0.26200 | Intel64 Family 6 Model 158, 6 logical processors | 23.9 GB | NVIDIA GeForce GTX 1650 SUPER, 4096 MiB | 596.36 | Official whisper.cpp v1.8.5 cuBLAS 12.4 bundle; CUDA Toolkit/nvcc not installed |
 
 ## Results
 
 | Backend | Model | Device | Audio | Elapsed (s) | RTF | WER | Segments | Notes |
 | --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- |
-| Whisper.cpp | | | | | | | | |
-| Parakeet | | | | | | | | |
+| Whisper.cpp | ggml-small.bin | cpu | videorc-session.wav (19.200 s) | 40.499 | 2.109 | — | 4 | CUDA build with `--no-gpu` |
+| Whisper.cpp | ggml-small.bin | cuda | videorc-session.wav (19.200 s) | 71.320 | 3.715 | — | 4 | CUDA device 0 active; short clip includes model/GPU startup overhead |
 
 Peak RAM/VRAM and qualitative timestamp/punctuation observations should be
 recorded in the notes column or below after each run. The first scaffold keeps
@@ -57,3 +57,8 @@ See the upstream references before downloading or building the optional
 runtime.
 
 Current local status: Parakeet runtime and model are not installed.
+
+The current CUDA build initializes the GTX 1650 SUPER successfully. The
+recorded clip is short and uses the small model, so its CUDA timing includes a
+large startup/transfer component and is slower than CPU. Longer recordings
+should be used before choosing a default device based on throughput alone.
