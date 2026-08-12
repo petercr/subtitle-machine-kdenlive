@@ -6,6 +6,8 @@ import json
 import logging
 import re
 import subprocess
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 from dataclasses import replace
 from pathlib import Path
 from typing import Any, Protocol
@@ -187,6 +189,74 @@ class LocalLLMCleaner:
                 diagnostic or "no diagnostic output",
             )
         return completed.stdout
+
+
+class LocalLLMServerCleaner:
+    """Use a running local llama.cpp OpenAI-compatible server for cleanup."""
+
+    def __init__(
+        self,
+        endpoint: str,
+        *,
+        max_segments_per_chunk: int = 8,
+        max_chars_per_chunk: int = 2400,
+        max_tokens: int = 512,
+        timeout_seconds: float = 120,
+    ) -> None:
+        self.endpoint = endpoint
+        self.max_segments_per_chunk = max_segments_per_chunk
+        self.max_chars_per_chunk = max_chars_per_chunk
+        self.max_tokens = max_tokens
+        self.timeout_seconds = timeout_seconds
+
+    def clean(self, transcript: Transcript) -> Transcript:
+        if not transcript.segments:
+            return transcript
+
+        cleaned_by_id: dict[str, str] = {}
+        for chunk in LocalLLMCleaner._chunks(self, transcript.segments):
+            cleaned_by_id.update(_validate_cleanup_response(self._run_chunk(chunk), chunk))
+        return replace(
+            transcript,
+            segments=[
+                replace(segment, text=cleaned_by_id[segment.id])
+                for segment in transcript.segments
+            ],
+        )
+
+    def _run_chunk(self, segments: list[SubtitleSegment]) -> str:
+        payload = {
+            "messages": [{"role": "user", "content": _cleanup_prompt(segments)}],
+            "temperature": 0,
+            "seed": 0,
+            "max_tokens": self.max_tokens,
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "subtitle_cleanup",
+                    "strict": True,
+                    "schema": CLEANUP_RESPONSE_SCHEMA,
+                },
+            },
+        }
+        request = Request(
+            self.endpoint,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            with urlopen(request, timeout=self.timeout_seconds) as response:
+                response_payload = json.loads(response.read().decode("utf-8"))
+        except (HTTPError, URLError, OSError, TimeoutError, json.JSONDecodeError) as exc:
+            raise CleanupFailed("Local llama.cpp server cleanup", [self.endpoint], -1, str(exc)) from exc
+
+        try:
+            content = response_payload["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise InvalidCleanupOutput("Local llama.cpp server returned no message content") from exc
+        if not isinstance(content, str):
+            raise InvalidCleanupOutput("Local llama.cpp server returned non-text message content")
+        return content
 
 
 def _cleanup_prompt(segments: list[SubtitleSegment]) -> str:

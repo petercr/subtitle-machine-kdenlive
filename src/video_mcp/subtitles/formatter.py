@@ -8,7 +8,7 @@ from video_mcp.models import SubtitleSegment, Transcript, Word
 
 _TERMINAL_PUNCTUATION = (".", "!", "?")
 _PHRASE_PUNCTUATION = (",", ";", ":")
-_NO_SPACE_BEFORE = set(",.;:!?%)]}")
+_NO_SPACE_BEFORE = set(",.;:!?%)]}'’")
 
 
 def format_transcript(

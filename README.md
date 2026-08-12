@@ -133,16 +133,28 @@ ASS export. It favours sentence and phrase endings and uses the configured
 line capacity as its character limit.
 
 Subtitle cleanup is deterministic by default. To enable optional local LLM
-cleanup, install a `llama.cpp` build that provides `llama-cli.exe`, download a
-compatible GGUF model, and set the executable and model paths in
-`video-mcp.yaml`:
+cleanup, install `llama.cpp`, download a compatible GGUF model, and set its
+path in `video-mcp.yaml`. The direct `llama-cli.exe` adapter remains available
+for compatible models. For Qwen 3.5, run the local OpenAI-compatible
+`llama-server.exe` endpoint; it applies the chat template before constrained
+JSON decoding.
+
+Start the server on localhost:
+
+```powershell
+C:\Tools\llama\llama-server.exe -m C:\Models\llama\Qwen3.5-2B-Q4_K_M.gguf `
+  --host 127.0.0.1 --port 8087 --no-webui --reasoning off
+```
+
+Then configure the endpoint:
 
 ```yaml
 tools:
-  llama_cpp: "C:/Tools/llama/llama-cli.exe"
+  llama_cpp: "C:/Tools/llama/llama-server.exe"
 llm:
   enabled: true
   model: "C:/Models/llama/Qwen3.5-2B-Q4_K_M.gguf"
+  server_url: "http://127.0.0.1:8087/v1/chat/completions"
   max_segments_per_chunk: 8
   max_chars_per_chunk: 2400
   max_tokens: 512
@@ -150,8 +162,8 @@ llm:
 
 The LLM receives bounded transcript chunks and must return a strict segment
 schema, so timing and segment IDs remain unchanged. If the executable, model,
-or response is unavailable or invalid, the pipeline records a warning and
-falls back to deterministic cleanup. The same service is available through
+server, or response is unavailable or invalid, the pipeline records a warning
+and falls back to deterministic cleanup. The same service is available through
 the MCP `subtitle.clean` tool.
 
 The cleanup service is also available directly from the CLI:
