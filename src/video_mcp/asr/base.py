@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from video_mcp.models import Transcript
@@ -18,6 +19,9 @@ class TranscriptionOptions:
     threads: int = 4
     translate: bool = False
     timeout_seconds: float = 3600
+    process_started: Callable[[int], None] | None = field(
+        default=None, compare=False, repr=False
+    )
 
     def __post_init__(self) -> None:
         if self.device not in {"auto", "cpu", "cuda"}:

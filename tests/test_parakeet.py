@@ -23,6 +23,24 @@ Tokens [4]:
 """
 
 
+class FakeProcess:
+    """Minimal Popen substitute for backend invocation tests."""
+
+    pid = 1234
+
+    def __init__(self, command, returncode=0, stdout="", stderr=""):
+        self.command = command
+        self.returncode = returncode
+        self._stdout = stdout
+        self._stderr = stderr
+
+    def communicate(self, timeout=None):
+        return self._stdout, self._stderr
+
+    def kill(self):
+        self.returncode = -1
+
+
 def test_parse_parakeet_output_normalizes_frames_and_words():
     transcript = parse_parakeet_output(PARAKEET_OUTPUT, "audio.wav")
 
@@ -59,13 +77,11 @@ def test_parakeet_backend_uses_safe_arguments_and_parses_stderr(monkeypatch, tmp
     model.write_bytes(b"model")
     calls: list[list[str]] = []
 
-    def fake_run(command, **kwargs):
+    def fake_popen(command, **kwargs):
         calls.append(command)
-        return subprocess.CompletedProcess(
-            command, 0, stdout="", stderr=PARAKEET_OUTPUT
-        )
+        return FakeProcess(command, stderr=PARAKEET_OUTPUT)
 
-    monkeypatch.setattr(parakeet_module.subprocess, "run", fake_run)
+    monkeypatch.setattr(parakeet_module.subprocess, "Popen", fake_popen)
 
     transcript = ParakeetBackend("parakeet-cli.exe", model).transcribe(
         audio, TranscriptionOptions(device="cpu", threads=6)
@@ -87,13 +103,13 @@ def test_parakeet_auto_retries_on_cpu_after_failure(monkeypatch, tmp_path):
     model.write_bytes(b"model")
     calls: list[list[str]] = []
 
-    def fake_run(command, **kwargs):
+    def fake_popen(command, **kwargs):
         calls.append(command)
         if len(calls) == 1:
-            return subprocess.CompletedProcess(command, 1, stdout="", stderr="GPU failed")
-        return subprocess.CompletedProcess(command, 0, stdout="", stderr=PARAKEET_OUTPUT)
+            return FakeProcess(command, returncode=1, stderr="GPU failed")
+        return FakeProcess(command, stderr=PARAKEET_OUTPUT)
 
-    monkeypatch.setattr(parakeet_module.subprocess, "run", fake_run)
+    monkeypatch.setattr(parakeet_module.subprocess, "Popen", fake_popen)
 
     transcript = ParakeetBackend("parakeet-cli", model).transcribe(
         audio, TranscriptionOptions(device="auto")
@@ -118,10 +134,10 @@ def test_parakeet_backend_reports_command_failure(monkeypatch, tmp_path):
     audio.write_bytes(b"audio")
     model.write_bytes(b"model")
 
-    def fake_run(command, **kwargs):
-        return subprocess.CompletedProcess(command, 1, stdout="", stderr="bad audio")
+    def fake_popen(command, **kwargs):
+        return FakeProcess(command, returncode=1, stderr="bad audio")
 
-    monkeypatch.setattr(parakeet_module.subprocess, "run", fake_run)
+    monkeypatch.setattr(parakeet_module.subprocess, "Popen", fake_popen)
 
     with pytest.raises(TranscriptionFailed, match="bad audio"):
         ParakeetBackend("parakeet-cli", model).transcribe(

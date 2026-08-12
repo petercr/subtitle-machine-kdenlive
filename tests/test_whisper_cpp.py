@@ -10,6 +10,24 @@ from video_mcp.asr.whisper_cpp import WhisperCppBackend, parse_whisper_output
 from video_mcp.errors import ModelNotFound, TranscriptionFailed
 
 
+class FakeProcess:
+    """Minimal Popen substitute for backend invocation tests."""
+
+    pid = 1234
+
+    def __init__(self, command, returncode=0, stdout="", stderr=""):
+        self.command = command
+        self.returncode = returncode
+        self._stdout = stdout
+        self._stderr = stderr
+
+    def communicate(self, timeout=None):
+        return self._stdout, self._stderr
+
+    def kill(self):
+        self.returncode = -1
+
+
 def _whisper_payload() -> dict:
     return {
         "result": {"language": "en"},
@@ -77,20 +95,23 @@ def test_whisper_backend_uses_safe_arguments_for_spaced_paths(monkeypatch, tmp_p
     model.parent.mkdir()
     model.write_bytes(b"model")
     calls = []
+    observed_pids = []
 
-    def fake_run(command, **kwargs):
+    def fake_popen(command, **kwargs):
         calls.append((command, kwargs))
         output_base = Path(command[command.index("-of") + 1])
         output_base.with_suffix(".json").write_text(
             json.dumps(_whisper_payload()), encoding="utf-8"
         )
-        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+        return FakeProcess(command)
 
-    monkeypatch.setattr(whisper_module.subprocess, "run", fake_run)
+    monkeypatch.setattr(whisper_module.subprocess, "Popen", fake_popen)
 
     transcript = WhisperCppBackend(executable, model).transcribe(
         audio_path,
-        TranscriptionOptions(device="cpu", threads=6),
+        TranscriptionOptions(
+            device="cpu", threads=6, process_started=observed_pids.append
+        ),
     )
 
     command, kwargs = calls[0]
@@ -101,6 +122,7 @@ def test_whisper_backend_uses_safe_arguments_for_spaced_paths(monkeypatch, tmp_p
     assert "-ng" in command
     assert command[command.index("-t") + 1] == "6"
     assert kwargs["shell"] is False
+    assert observed_pids == [1234]
 
 
 def test_whisper_auto_retries_on_cpu_after_failure(monkeypatch, tmp_path):
@@ -110,17 +132,17 @@ def test_whisper_auto_retries_on_cpu_after_failure(monkeypatch, tmp_path):
     model.write_bytes(b"model")
     calls = []
 
-    def fake_run(command, **kwargs):
+    def fake_popen(command, **kwargs):
         calls.append(command)
         if len(calls) == 1:
-            return subprocess.CompletedProcess(command, 1, stdout="", stderr="GPU failed")
+            return FakeProcess(command, returncode=1, stderr="GPU failed")
         output_base = Path(command[command.index("-of") + 1])
         output_base.with_suffix(".json").write_text(
             json.dumps(_whisper_payload()), encoding="utf-8"
         )
-        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+        return FakeProcess(command)
 
-    monkeypatch.setattr(whisper_module.subprocess, "run", fake_run)
+    monkeypatch.setattr(whisper_module.subprocess, "Popen", fake_popen)
 
     transcript = WhisperCppBackend("whisper-cli", model).transcribe(
         audio_path, TranscriptionOptions(device="auto")
@@ -139,15 +161,15 @@ def test_whisper_cuda_requests_gpu_device(monkeypatch, tmp_path):
     model.write_bytes(b"model")
     calls = []
 
-    def fake_run(command, **kwargs):
+    def fake_popen(command, **kwargs):
         calls.append(command)
         output_base = Path(command[command.index("-of") + 1])
         output_base.with_suffix(".json").write_text(
             json.dumps(_whisper_payload()), encoding="utf-8"
         )
-        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+        return FakeProcess(command)
 
-    monkeypatch.setattr(whisper_module.subprocess, "run", fake_run)
+    monkeypatch.setattr(whisper_module.subprocess, "Popen", fake_popen)
 
     WhisperCppBackend("whisper-cli", model).transcribe(
         audio_path,
@@ -172,10 +194,10 @@ def test_whisper_backend_reports_command_failure(monkeypatch, tmp_path):
     audio_path.write_bytes(b"audio")
     model.write_bytes(b"model")
 
-    def fake_run(command, **kwargs):
-        return subprocess.CompletedProcess(command, 1, stdout="", stderr="bad audio")
+    def fake_popen(command, **kwargs):
+        return FakeProcess(command, returncode=1, stderr="bad audio")
 
-    monkeypatch.setattr(whisper_module.subprocess, "run", fake_run)
+    monkeypatch.setattr(whisper_module.subprocess, "Popen", fake_popen)
 
     with pytest.raises(TranscriptionFailed, match="bad audio"):
         WhisperCppBackend("whisper-cli", model).transcribe(
