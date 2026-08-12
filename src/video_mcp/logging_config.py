@@ -12,6 +12,15 @@ from uuid import uuid4
 _STANDARD_LOG_RECORD_FIELDS = set(logging.makeLogRecord({}).__dict__)
 
 
+class ContextLoggerAdapter(logging.LoggerAdapter[logging.Logger]):
+    """Logger adapter that preserves per-job context and event-specific fields."""
+
+    def process(self, msg: object, kwargs: dict[str, Any]) -> tuple[object, dict[str, Any]]:
+        event_context = kwargs.get("extra", {})
+        kwargs["extra"] = {**self.extra, **event_context}
+        return msg, kwargs
+
+
 class JsonFormatter(logging.Formatter):
     """Format one compact JSON object per log record."""
 
@@ -53,8 +62,8 @@ def new_job_id() -> str:
 
 def get_job_logger(
     name: str, *, job_id: str | None = None, **context: Any
-) -> logging.LoggerAdapter[logging.Logger]:
+) -> ContextLoggerAdapter:
     """Return a logger carrying a job ID and optional structured context."""
 
     extra = {"job_id": job_id or new_job_id(), **context}
-    return logging.LoggerAdapter(logging.getLogger(name), extra)
+    return ContextLoggerAdapter(logging.getLogger(name), extra)

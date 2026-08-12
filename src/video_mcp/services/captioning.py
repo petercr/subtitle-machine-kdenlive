@@ -13,6 +13,7 @@ from video_mcp.media.ffmpeg import extract_audio
 from video_mcp.media.probe import probe_video
 from video_mcp.media.render import create_preview
 from video_mcp.models import MediaInfo, Transcript
+from video_mcp.logging_config import get_job_logger, new_job_id
 from video_mcp.services.cleanup import clean_transcript
 from video_mcp.subtitles.ass import write_ass
 from video_mcp.subtitles.srt import write_srt
@@ -46,6 +47,7 @@ class CaptionResult:
     """Paths and metadata produced by a complete captioning job."""
 
     input_path: Path
+    job_id: str
     job_dir: Path
     source_json: Path
     audio_wav: Path
@@ -77,7 +79,17 @@ def caption_video(
 
     options = options or CaptionOptions(style=config.subtitles.preset)
     source = Path(input_path).expanduser().resolve()
+    job_id = new_job_id()
+    logger = get_job_logger(
+        "video_mcp.captioning",
+        job_id=job_id,
+        input_path=str(source),
+        backend=config.asr.backend,
+        device=options.device,
+    )
+    logger.info("Caption job started")
     media = probe_video(source, ffprobe_path=config.tools.ffprobe)
+    logger.info("Media inspection completed", extra={"duration_ms": media.duration_ms})
     job_dir = config.output.workspace / source.stem
     job_dir.mkdir(parents=True, exist_ok=True)
 
@@ -94,6 +106,7 @@ def caption_video(
         {"schema_version": 1, "input": str(source), "media": media.as_dict()},
         overwrite=options.overwrite,
     )
+    logger.info("Source metadata ready", extra={"path": str(source_json)})
     if options.overwrite or not audio_wav.exists():
         extract_audio(
             source,
@@ -101,6 +114,9 @@ def caption_video(
             ffmpeg_path=config.tools.ffmpeg,
             overwrite=options.overwrite,
         )
+        logger.info("Audio extraction completed", extra={"path": str(audio_wav)})
+    else:
+        logger.info("Audio extraction reused", extra={"path": str(audio_wav)})
 
     if options.overwrite or not transcript_raw_json.exists():
         backend = create_asr_backend(config)
@@ -113,8 +129,16 @@ def caption_video(
             ),
         )
         _write_json(transcript_raw_json, transcript.as_dict())
+        logger.info(
+            "Transcription completed",
+            extra={"path": str(transcript_raw_json), "segment_count": len(transcript.segments)},
+        )
     else:
         transcript = _read_transcript(transcript_raw_json)
+        logger.info(
+            "Transcription reused",
+            extra={"path": str(transcript_raw_json), "segment_count": len(transcript.segments)},
+        )
 
     cleanup_warnings: list[str] = []
     if options.overwrite or not transcript_cleaned_json.exists():
@@ -122,10 +146,18 @@ def caption_video(
         cleaned_transcript = cleanup_result.transcript
         cleanup_warnings = cleanup_result.warnings
         _write_json(transcript_cleaned_json, cleaned_transcript.as_dict())
+        logger.info(
+            "Transcript cleanup completed",
+            extra={"path": str(transcript_cleaned_json), "warnings": cleanup_warnings},
+        )
     else:
         cleaned_transcript = _read_transcript(transcript_cleaned_json)
+        logger.info("Transcript cleanup reused", extra={"path": str(transcript_cleaned_json)})
     if options.overwrite or not subtitles_srt.exists():
         write_srt(cleaned_transcript, subtitles_srt, overwrite=options.overwrite)
+        logger.info("SRT export completed", extra={"path": str(subtitles_srt)})
+    else:
+        logger.info("SRT export reused", extra={"path": str(subtitles_srt)})
     if options.overwrite or not subtitles_ass.exists():
         write_ass(
             cleaned_transcript,
@@ -135,6 +167,9 @@ def caption_video(
             play_res_y=media.video.height if media.video and media.video.height else 1080,
             overwrite=options.overwrite,
         )
+        logger.info("ASS export completed", extra={"path": str(subtitles_ass)})
+    else:
+        logger.info("ASS export reused", extra={"path": str(subtitles_ass)})
     if options.create_preview:
         if options.overwrite or not preview_mp4.exists():
             create_preview(
@@ -145,12 +180,16 @@ def caption_video(
                 preview_width=options.preview_width,
                 overwrite=options.overwrite,
             )
+            logger.info("Preview rendering completed", extra={"path": str(preview_mp4)})
+        else:
+            logger.info("Preview rendering reused", extra={"path": str(preview_mp4)})
         preview_result: Path | None = preview_mp4
     else:
         preview_result = None
 
-    return CaptionResult(
+    result = CaptionResult(
         input_path=source,
+        job_id=job_id,
         job_dir=job_dir.resolve(),
         source_json=source_json.resolve(),
         audio_wav=audio_wav.resolve(),
@@ -163,6 +202,11 @@ def caption_video(
         segment_count=len(cleaned_transcript.segments),
         warnings=cleanup_warnings,
     )
+    logger.info(
+        "Caption job completed",
+        extra={"job_dir": str(result.job_dir), "segment_count": result.segment_count},
+    )
+    return result
 
 
 def _read_transcript(path: Path) -> Transcript:
