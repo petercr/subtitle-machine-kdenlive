@@ -112,14 +112,17 @@ class WhisperCppBackend(ASRBackend):
         self, command: list[str], options: TranscriptionOptions
     ) -> subprocess.CompletedProcess[str]:
         try:
-            return subprocess.run(
+            process = subprocess.Popen(
                 command,
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
-                check=False,
                 shell=False,
-                timeout=options.timeout_seconds,
             )
+            if options.process_started is not None:
+                options.process_started(process.pid)
+            stdout, stderr = process.communicate(timeout=options.timeout_seconds)
+            return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
         except FileNotFoundError as exc:
             raise ExecutableNotFound(
                 f"Whisper.cpp executable was not found: {self.executable}"
@@ -129,11 +132,13 @@ class WhisperCppBackend(ASRBackend):
                 f"Could not start Whisper.cpp '{self.executable}': {exc}"
             ) from exc
         except subprocess.TimeoutExpired as exc:
+            process.kill()
+            stdout, stderr = process.communicate()
             raise TranscriptionFailed(
                 "Whisper.cpp transcription timed out",
                 command,
                 -1,
-                str(exc),
+                stderr.strip() or stdout.strip() or str(exc),
             ) from exc
 
 

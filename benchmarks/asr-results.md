@@ -28,7 +28,10 @@ uv run python scripts/benchmark_asr.py `
 Place an optional `sample.txt` reference beside the matching `sample.wav`
 under `benchmarks/references`. WER is case- and punctuation-insensitive.
 Real-time factor is elapsed processing time divided by audio duration; lower
-is faster.
+is faster. Results also include best-effort peak process RAM and GPU VRAM in
+MiB. RAM is sampled from the ASR child process. VRAM is sampled from its PID
+through `nvidia-smi` when available; Windows WDDM drivers that hide per-process
+usage instead report a clearly labeled whole-device memory delta.
 
 ## Machine
 
@@ -38,15 +41,15 @@ is faster.
 
 ## Results
 
-| Backend | Model | Device | Audio | Elapsed (s) | RTF | WER | Segments | Notes |
-| --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- |
-| Whisper.cpp | ggml-small.bin | cpu | videorc-session.wav (19.200 s) | 40.499 | 2.109 | — | 4 | CUDA build with `--no-gpu` |
-| Whisper.cpp | ggml-small.bin | cuda | videorc-session.wav (19.200 s) | 71.320 | 3.715 | — | 4 | CUDA device 0 active; short clip includes model/GPU startup overhead |
+| Backend | Model | Device | Audio | Elapsed (s) | RTF | Peak RAM (MiB) | Peak VRAM (MiB) | WER | Segments | Notes |
+| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| Whisper.cpp | ggml-small.bin | cpu | videorc-session.wav (19.200 s) | 17.546 | 0.914 | 935.4 | — | — | 4 | CUDA build with `--no-gpu`; warmed local run |
+| Whisper.cpp | ggml-small.bin | cuda | videorc-session.wav (19.200 s) | 30.211 | 1.573 | 599.6 | 873.0 | — | 4 | CUDA device 0 active; VRAM is a `device_delta` because WDDM did not expose the ASR PID |
 
-Peak RAM/VRAM and qualitative timestamp/punctuation observations should be
-recorded in the notes column or below after each run. The first scaffold keeps
-the benchmark dependency-free and reports wall time, RTF, segment count, and
-WER; it does not silently claim process-level peak memory measurements.
+Record qualitative timestamp and punctuation observations in the notes column
+or below each run. Resource metrics are best-effort rather than a claim of
+whole-system usage: RAM covers only the launched ASR process, and the JSON
+`gpu_memory_scope` field distinguishes process VRAM from a WDDM device delta.
 
 ## Installation notes
 

@@ -204,7 +204,11 @@ uv run python scripts/benchmark_asr.py --backend parakeet `
 ```
 
 Results belong in `benchmarks/asr-results.md`; model weights and generated
-audio stay outside Git.
+audio stay outside Git. Each JSON result includes wall time, real-time factor,
+and best-effort `peak_process_memory_mib` plus `peak_gpu_memory_mib` for the
+ASR process. GPU memory is sampled with `nvidia-smi`; `gpu_memory_scope` is
+`process` when the driver identifies the ASR PID, or `device_delta` when a
+Windows WDDM driver only exposes whole-device memory usage.
 
 # Codex Implementation Brief — Windows Local Video Subtitle MCP
 
