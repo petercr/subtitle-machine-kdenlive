@@ -12,7 +12,14 @@ uv run video-mcp --version
 uv run pytest
 ```
 
-GitHub Actions runs the locked test suite and Python compilation checks on
+Linting and formatting use ruff:
+
+```powershell
+uv run ruff check src tests scripts
+uv run ruff format src tests scripts
+```
+
+CI runs the linter, format check, and locked test suite on both Ubuntu and
 both Ubuntu and Windows for pull requests and pushes to `main`. The local
 smoke test remains opt-in because hosted runners do not provide the native
 FFmpeg, Whisper.cpp, Kdenlive, or model installation used by the full local

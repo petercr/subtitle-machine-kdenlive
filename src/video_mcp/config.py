@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path, PureWindowsPath
-from typing import Any, Mapping
+from typing import Any
 
 import yaml
 
@@ -139,8 +140,7 @@ def _apply_environment_overrides(
     raw: Mapping[str, Any], environ: Mapping[str, str]
 ) -> dict[str, Any]:
     merged: dict[str, Any] = {
-        key: dict(value) if isinstance(value, Mapping) else value
-        for key, value in raw.items()
+        key: dict(value) if isinstance(value, Mapping) else value for key, value in raw.items()
     }
     for env_name, (section_name, key) in ENVIRONMENT_OVERRIDES.items():
         if env_name not in environ:
@@ -152,9 +152,7 @@ def _apply_environment_overrides(
     return merged
 
 
-def _build_config(
-    raw: Mapping[str, Any], *, base_dir: Path, source_path: Path | None
-) -> AppConfig:
+def _build_config(raw: Mapping[str, Any], *, base_dir: Path, source_path: Path | None) -> AppConfig:
     tools = _section(raw, "tools")
     asr = _section(raw, "asr")
     subtitles = _section(raw, "subtitles")
@@ -183,9 +181,7 @@ def _build_config(
         asr=ASRConfig(
             backend=str(asr.get("backend", "whisper_cpp")),
             device=device,
-            model=_resolved_path(
-                asr.get("model", "C:/Models/whisper/ggml-small.bin"), base_dir
-            ),
+            model=_resolved_path(asr.get("model", "C:/Models/whisper/ggml-small.bin"), base_dir),
         ),
         subtitles=SubtitleConfig(
             preset=str(subtitles.get("preset", "clean")),
@@ -209,9 +205,7 @@ def _build_config(
             ),
             max_tokens=_positive_int(llm.get("max_tokens", 512), "llm.max_tokens"),
         ),
-        output=OutputConfig(
-            workspace=_resolved_path(output.get("workspace", "work"), base_dir)
-        ),
+        output=OutputConfig(workspace=_resolved_path(output.get("workspace", "work"), base_dir)),
         source_path=source_path,
     )
 
@@ -221,6 +215,7 @@ def _section(raw: Mapping[str, Any], name: str) -> Mapping[str, Any]:
     if not isinstance(value, Mapping):
         raise ConfigurationError(f"Configuration section '{name}' must be a mapping.")
     return value
+
 
 def _positive_int(value: Any, field_name: str) -> int:
     try:

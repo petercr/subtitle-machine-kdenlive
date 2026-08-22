@@ -9,11 +9,11 @@ from pathlib import Path
 from video_mcp.asr.base import TranscriptionOptions
 from video_mcp.asr.factory import create_asr_backend
 from video_mcp.config import AppConfig
+from video_mcp.logging_config import get_job_logger, new_job_id
 from video_mcp.media.ffmpeg import extract_audio
 from video_mcp.media.probe import probe_video
 from video_mcp.media.render import create_preview
-from video_mcp.models import MediaInfo, Transcript
-from video_mcp.logging_config import get_job_logger, new_job_id
+from video_mcp.models import Transcript
 from video_mcp.services.cleanup import clean_transcript
 from video_mcp.subtitles.ass import write_ass
 from video_mcp.subtitles.srt import write_srt
@@ -218,8 +218,6 @@ def _write_json(path: Path, value: dict[str, object]) -> None:
     path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
 
 
-def _write_json_if_needed(
-    path: Path, value: dict[str, object], *, overwrite: bool
-) -> None:
+def _write_json_if_needed(path: Path, value: dict[str, object], *, overwrite: bool) -> None:
     if overwrite or not path.exists():
         _write_json(path, value)

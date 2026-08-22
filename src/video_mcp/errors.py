@@ -40,9 +40,7 @@ class ExternalCommandFailed(VideoMcpError):
         self.returncode = returncode
         self.stderr = stderr.strip()
         detail = self.stderr or "no diagnostic output"
-        super().__init__(
-            f"{operation} failed with exit code {returncode}: {detail}"
-        )
+        super().__init__(f"{operation} failed with exit code {returncode}: {detail}")
 
 
 class MediaProbeFailed(ExternalCommandFailed):

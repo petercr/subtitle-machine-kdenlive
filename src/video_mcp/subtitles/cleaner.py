@@ -6,11 +6,11 @@ import json
 import logging
 import re
 import subprocess
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
 from dataclasses import replace
 from pathlib import Path
 from typing import Any, Protocol
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from video_mcp.errors import (
     CleanupFailed,
@@ -58,8 +58,7 @@ class DeterministicCleaner:
         return replace(
             transcript,
             segments=[
-                replace(segment, text=_clean_text(segment.text))
-                for segment in transcript.segments
+                replace(segment, text=_clean_text(segment.text)) for segment in transcript.segments
             ],
         )
 
@@ -104,8 +103,7 @@ class LocalLLMCleaner:
         return replace(
             transcript,
             segments=[
-                replace(segment, text=cleaned_by_id[segment.id])
-                for segment in transcript.segments
+                replace(segment, text=cleaned_by_id[segment.id]) for segment in transcript.segments
             ],
         )
 
@@ -115,12 +113,9 @@ class LocalLLMCleaner:
         current_chars = 0
         for segment in segments:
             segment_chars = len(segment.text)
-            reaches_limit = (
-                current
-                and (
-                    len(current) >= self.max_segments_per_chunk
-                    or current_chars + segment_chars > self.max_chars_per_chunk
-                )
+            reaches_limit = current and (
+                len(current) >= self.max_segments_per_chunk
+                or current_chars + segment_chars > self.max_chars_per_chunk
             )
             if reaches_limit:
                 chunks.append(current)
@@ -176,9 +171,7 @@ class LocalLLMCleaner:
                 f"Could not start llama.cpp '{self.executable}': {exc}"
             ) from exc
         except subprocess.TimeoutExpired as exc:
-            raise CleanupFailed(
-                "Local LLM cleanup timed out", command, -1, str(exc)
-            ) from exc
+            raise CleanupFailed("Local LLM cleanup timed out", command, -1, str(exc)) from exc
 
         if completed.returncode != 0:
             diagnostic = completed.stderr.strip() or completed.stdout.strip()
@@ -219,8 +212,7 @@ class LocalLLMServerCleaner:
         return replace(
             transcript,
             segments=[
-                replace(segment, text=cleaned_by_id[segment.id])
-                for segment in transcript.segments
+                replace(segment, text=cleaned_by_id[segment.id]) for segment in transcript.segments
             ],
         )
 
@@ -248,12 +240,16 @@ class LocalLLMServerCleaner:
             with urlopen(request, timeout=self.timeout_seconds) as response:
                 response_payload = json.loads(response.read().decode("utf-8"))
         except (HTTPError, URLError, OSError, TimeoutError, json.JSONDecodeError) as exc:
-            raise CleanupFailed("Local llama.cpp server cleanup", [self.endpoint], -1, str(exc)) from exc
+            raise CleanupFailed(
+                "Local llama.cpp server cleanup", [self.endpoint], -1, str(exc)
+            ) from exc
 
         try:
             content = response_payload["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError) as exc:
-            raise InvalidCleanupOutput("Local llama.cpp server returned no message content") from exc
+            raise InvalidCleanupOutput(
+                "Local llama.cpp server returned no message content"
+            ) from exc
         if not isinstance(content, str):
             raise InvalidCleanupOutput("Local llama.cpp server returned non-text message content")
         return content

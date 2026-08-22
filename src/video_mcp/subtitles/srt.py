@@ -69,14 +69,10 @@ def write_srt(
     return destination.resolve()
 
 
-def _validate_segment(
-    segment: SubtitleSegment, cue_number: int, previous_end: int
-) -> None:
+def _validate_segment(segment: SubtitleSegment, cue_number: int, previous_end: int) -> None:
     if segment.start_ms < 0 or segment.end_ms < 0:
         raise SubtitleGenerationFailed(f"SRT cue {cue_number} has a negative timestamp")
     if segment.end_ms <= segment.start_ms:
-        raise SubtitleGenerationFailed(
-            f"SRT cue {cue_number} must end after it starts"
-        )
+        raise SubtitleGenerationFailed(f"SRT cue {cue_number} must end after it starts")
     if segment.start_ms < previous_end:
         raise SubtitleGenerationFailed(f"SRT cue {cue_number} overlaps the previous cue")

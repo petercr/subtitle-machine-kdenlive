@@ -45,8 +45,10 @@ def transcribe_audio(
     """Transcribe normalized audio and persist the versioned transcript JSON."""
 
     audio = Path(input_path).expanduser().resolve()
-    destination = Path(output_path).expanduser() if output_path else (
-        config.output.workspace / f"{audio.stem}.transcript.raw.json"
+    destination = (
+        Path(output_path).expanduser()
+        if output_path
+        else (config.output.workspace / f"{audio.stem}.transcript.raw.json")
     )
     destination = destination.resolve()
     if destination.exists() and not overwrite:
@@ -64,9 +66,7 @@ def transcribe_audio(
         ),
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(
-        json.dumps(transcript.as_dict(), indent=2) + "\n", encoding="utf-8"
-    )
+    destination.write_text(json.dumps(transcript.as_dict(), indent=2) + "\n", encoding="utf-8")
     return TranscriptionResult(
         input_path=audio,
         transcript_path=destination,

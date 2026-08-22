@@ -117,18 +117,10 @@ def write_ass(
     return destination.resolve()
 
 
-def _validate_segment(
-    segment: SubtitleSegment, cue_number: int, previous_end: int
-) -> None:
+def _validate_segment(segment: SubtitleSegment, cue_number: int, previous_end: int) -> None:
     if segment.start_ms < 0 or segment.end_ms < 0:
-        raise SubtitleGenerationFailed(
-            f"ASS dialogue {cue_number} has a negative timestamp"
-        )
+        raise SubtitleGenerationFailed(f"ASS dialogue {cue_number} has a negative timestamp")
     if segment.end_ms <= segment.start_ms:
-        raise SubtitleGenerationFailed(
-            f"ASS dialogue {cue_number} must end after it starts"
-        )
+        raise SubtitleGenerationFailed(f"ASS dialogue {cue_number} must end after it starts")
     if segment.start_ms < previous_end:
-        raise SubtitleGenerationFailed(
-            f"ASS dialogue {cue_number} overlaps the previous dialogue"
-        )
+        raise SubtitleGenerationFailed(f"ASS dialogue {cue_number} overlaps the previous dialogue")

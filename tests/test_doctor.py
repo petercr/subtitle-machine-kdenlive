@@ -37,9 +37,7 @@ def test_doctor_reports_missing_tools_without_crashing(tmp_path):
 
 def test_doctor_json_output_is_structured(capsys, tmp_path):
     config_path = tmp_path / "video-mcp.yaml"
-    config_path.write_text(
-        f"output:\n  workspace: {tmp_path / 'work'}\n", encoding="utf-8"
-    )
+    config_path.write_text(f"output:\n  workspace: {tmp_path / 'work'}\n", encoding="utf-8")
 
     assert main(["--config", str(config_path), "doctor", "--json"]) == 1
 

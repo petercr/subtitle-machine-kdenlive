@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
 
 from video_mcp.errors import SubtitleGenerationFailed
 
@@ -42,9 +42,7 @@ class ASSStyle:
         if not self.name or any(character in self.name for character in ",\r\n"):
             raise SubtitleGenerationFailed("ASS style name must not contain commas or newlines")
         if not self.font_name or any(character in self.font_name for character in ",\r\n"):
-            raise SubtitleGenerationFailed(
-                "ASS font name must not contain commas or newlines"
-            )
+            raise SubtitleGenerationFailed("ASS font name must not contain commas or newlines")
         if self.font_size <= 0:
             raise SubtitleGenerationFailed("ASS font size must be greater than zero")
         for color in (

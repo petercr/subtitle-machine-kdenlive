@@ -22,21 +22,15 @@ KDENLIVE_XML_NAMESPACE = "http://www.kdenlive.org/project"
 class ProjectAdapter(Protocol):
     """Application-facing boundary for editable project exporters."""
 
-    def create_project(
-        self, source: PathLike, media: MediaInfo
-    ) -> "KdenliveProject": ...
+    def create_project(self, source: PathLike, media: MediaInfo) -> KdenliveProject: ...
 
-    def add_video(
-        self, project: "KdenliveProject", source: PathLike, media: MediaInfo
-    ) -> None: ...
+    def add_video(self, project: KdenliveProject, source: PathLike, media: MediaInfo) -> None: ...
 
-    def add_subtitles(
-        self, project: "KdenliveProject", subtitles: PathLike
-    ) -> None: ...
+    def add_subtitles(self, project: KdenliveProject, subtitles: PathLike) -> None: ...
 
     def save(
         self,
-        project: "KdenliveProject",
+        project: KdenliveProject,
         destination: PathLike,
         *,
         overwrite: bool = False,
@@ -61,9 +55,7 @@ class KdenliveProjectAdapter:
     not launch Kdenlive, invoke ``melt``, or manipulate the editor UI.
     """
 
-    def create_project(
-        self, source: PathLike, media: MediaInfo
-    ) -> KdenliveProject:
+    def create_project(self, source: PathLike, media: MediaInfo) -> KdenliveProject:
         source_path = _require_file(source, "Source video")
         profile = _profile_from_media(media)
         duration_frames = _duration_frames(media.duration_ms, profile[0], profile[1])
@@ -79,7 +71,7 @@ class KdenliveProjectAdapter:
                 "producer": "main_bin",
             },
         )
-        profile_element = ET.SubElement(
+        ET.SubElement(
             root,
             "profile",
             {
@@ -106,8 +98,7 @@ class KdenliveProjectAdapter:
         main_bin = root.find("playlist[@id='main_bin']")
         main_tractor = root.find("tractor[@id='maintractor']")
         if any(
-            element is None
-            for element in (track_tractor, sequence_tractor, main_bin, main_tractor)
+            element is None for element in (track_tractor, sequence_tractor, main_bin, main_tractor)
         ):
             raise KdenliveProjectFailed("Internal Kdenlive project graph is incomplete")
 
@@ -124,9 +115,7 @@ class KdenliveProjectAdapter:
 
         return project
 
-    def add_video(
-        self, project: KdenliveProject, source: PathLike, media: MediaInfo
-    ) -> None:
+    def add_video(self, project: KdenliveProject, source: PathLike, media: MediaInfo) -> None:
         """Add one source video as the first timeline track."""
 
         source_path = _require_file(source, "Source video")
@@ -183,14 +172,14 @@ class KdenliveProjectAdapter:
         root.append(main_tractor)
         project._video_added = True
 
-    def add_subtitles(
-        self, project: KdenliveProject, subtitles: PathLike
-    ) -> None:
+    def add_subtitles(self, project: KdenliveProject, subtitles: PathLike) -> None:
         """Attach an SRT subtitle filter to the active sequence tractor."""
 
         subtitle_path = _require_file(subtitles, "Subtitle")
         if project.subtitle_source is not None:
-            raise KdenliveProjectFailed("Only one subtitle asset is supported in the minimal writer")
+            raise KdenliveProjectFailed(
+                "Only one subtitle asset is supported in the minimal writer"
+            )
         sequence_tractor = project.root.find("tractor[@id='tractor1']")
         if sequence_tractor is None:
             raise KdenliveProjectFailed("Cannot add subtitles before adding a video")
@@ -224,7 +213,8 @@ class KdenliveProjectAdapter:
             )
         if subtitle_destination.exists() and not overwrite:
             raise KdenliveProjectFailed(
-                f"Subtitle output already exists: {subtitle_destination}; pass overwrite=True to replace it"
+                f"Subtitle output already exists: {subtitle_destination}; "
+                "pass overwrite=True to replace it"
             )
         destination_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -312,11 +302,7 @@ def _add_property(parent: ET.Element, name: str, value: str) -> ET.Element:
 
 
 def _set_property(parent: ET.Element, name: str, value: str) -> ET.Element:
-    matches = [
-        child
-        for child in parent.findall("property")
-        if child.attrib.get("name") == name
-    ]
+    matches = [child for child in parent.findall("property") if child.attrib.get("name") == name]
     if matches:
         property_element = matches[0]
         property_element.text = value

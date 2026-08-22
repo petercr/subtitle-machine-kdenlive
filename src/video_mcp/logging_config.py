@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, TextIO
 from uuid import uuid4
 
@@ -26,7 +26,7 @@ class JsonFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         payload: dict[str, Any] = {
-            "timestamp": datetime.fromtimestamp(record.created, timezone.utc).isoformat(),
+            "timestamp": datetime.fromtimestamp(record.created, UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
@@ -39,9 +39,7 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(payload, ensure_ascii=False, default=str)
 
 
-def configure_logging(
-    level: str | int = "INFO", *, stream: TextIO | None = None
-) -> None:
+def configure_logging(level: str | int = "INFO", *, stream: TextIO | None = None) -> None:
     """Configure the application root logger for structured output."""
 
     handler = logging.StreamHandler(stream or sys.stderr)
@@ -60,9 +58,7 @@ def new_job_id() -> str:
     return uuid4().hex
 
 
-def get_job_logger(
-    name: str, *, job_id: str | None = None, **context: Any
-) -> ContextLoggerAdapter:
+def get_job_logger(name: str, *, job_id: str | None = None, **context: Any) -> ContextLoggerAdapter:
     """Return a logger carrying a job ID and optional structured context."""
 
     extra = {"job_id": job_id or new_job_id(), **context}

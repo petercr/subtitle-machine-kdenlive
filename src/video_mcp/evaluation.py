@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import re
 import os
+import re
 import subprocess
 import threading
 import time
@@ -123,9 +123,7 @@ class ResourceMonitor:
         for pid in pids:
             memory_mib = _process_memory_mib(pid)
             if memory_mib is not None:
-                self._peak_process_memory_mib = max(
-                    self._peak_process_memory_mib or 0, memory_mib
-                )
+                self._peak_process_memory_mib = max(self._peak_process_memory_mib or 0, memory_mib)
 
     def _record_gpu_memory(self, memory_mib: float, scope: str) -> None:
         if self._gpu_memory_scope == "process" and scope != "process":
@@ -312,9 +310,7 @@ def benchmark_asr(
         word_count=len(normalize_words(hypothesis)),
         language=transcript.language,
         word_error_rate=(
-            word_error_rate(reference_text, hypothesis)
-            if reference_text is not None
-            else None
+            word_error_rate(reference_text, hypothesis) if reference_text is not None else None
         ),
         peak_process_memory_mib=monitor.peak_process_memory_mib,
         peak_gpu_memory_mib=monitor.peak_gpu_memory_mib,

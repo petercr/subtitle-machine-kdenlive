@@ -45,9 +45,7 @@ def test_cli_cleans_transcript_with_deterministic_fallback(capsys, monkeypatch, 
         encoding="utf-8",
     )
 
-    assert main(
-        ["clean", str(transcript_path), "--output", str(output_path), "--json"]
-    ) == 0
+    assert main(["clean", str(transcript_path), "--output", str(output_path), "--json"]) == 0
 
     result = json.loads(capsys.readouterr().out)
     assert result["used_llm"] is False

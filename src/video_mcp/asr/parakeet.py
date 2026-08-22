@@ -7,6 +7,7 @@ import re
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
+
 from video_mcp.asr.base import ASRBackend, TranscriptionOptions
 from video_mcp.errors import (
     ExecutableNotFound,
@@ -24,8 +25,8 @@ _SEGMENT_RE = re.compile(
     r'^\s*Segment\s+\d+:\s+\[(?P<start>-?\d+)\s+->\s+(?P<end>-?\d+)\]\s+"(?P<text>.*)"\s*$'
 )
 _TOKEN_RE = re.compile(
-    r'^\s*\[\s*\d+\]\s+.*?\bp=(?P<prob>-?[0-9.]+)\s+'
-    r'.*?\bt0=\s*(?P<start>-?\d+)\s+t1=\s*(?P<end>-?\d+)\s+'
+    r"^\s*\[\s*\d+\]\s+.*?\bp=(?P<prob>-?[0-9.]+)\s+"
+    r".*?\bt0=\s*(?P<start>-?\d+)\s+t1=\s*(?P<end>-?\d+)\s+"
     r'word_start=(?P<word_start>true|false)\s+"(?P<text>.*)"\s*$'
 )
 
@@ -63,9 +64,7 @@ class _ParsedSegment:
             self.pending_word += token_text
             self.pending_end_ms = max(self.pending_end_ms or end_ms, end_ms)
             self.pending_confidence = min(
-                self.pending_confidence
-                if self.pending_confidence is not None
-                else confidence,
+                self.pending_confidence if self.pending_confidence is not None else confidence,
                 confidence,
             )
 
@@ -128,9 +127,7 @@ class ParakeetBackend(ASRBackend):
                 _diagnostic_output(completed),
             )
 
-        return parse_parakeet_output(
-            f"{completed.stdout}\n{completed.stderr}", audio
-        )
+        return parse_parakeet_output(f"{completed.stdout}\n{completed.stderr}", audio)
 
     def _command(
         self,
@@ -236,9 +233,7 @@ def parse_parakeet_output(payload: str, audio_path: PathLike) -> Transcript:
         current.finish()
         parsed.append(current)
     if not parsed:
-        raise InvalidTranscriptOutput(
-            f"Parakeet produced no segment output for {audio_path}"
-        )
+        raise InvalidTranscriptOutput(f"Parakeet produced no segment output for {audio_path}")
 
     segments = [
         SubtitleSegment(
@@ -252,9 +247,7 @@ def parse_parakeet_output(payload: str, audio_path: PathLike) -> Transcript:
         if segment.text
     ]
     if not segments:
-        raise InvalidTranscriptOutput(
-            f"Parakeet produced no non-empty segments for {audio_path}"
-        )
+        raise InvalidTranscriptOutput(f"Parakeet produced no non-empty segments for {audio_path}")
     return Transcript(
         language=None,
         duration_ms=max(segment.end_ms for segment in segments),

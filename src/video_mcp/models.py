@@ -85,7 +85,7 @@ class Transcript:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, value: Any) -> "Transcript":
+    def from_dict(cls, value: Any) -> Transcript:
         """Load the stable JSON representation written by the ASR pipeline."""
 
         if not isinstance(value, dict):
@@ -135,9 +135,7 @@ class Transcript:
                 )
             )
         return cls(
-            language=(
-                str(value["language"]) if value.get("language") is not None else None
-            ),
+            language=(str(value["language"]) if value.get("language") is not None else None),
             duration_ms=int(value.get("duration_ms", 0)),
             segments=segments,
             schema_version=schema_version,

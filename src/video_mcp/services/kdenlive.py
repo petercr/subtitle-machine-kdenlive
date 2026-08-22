@@ -49,9 +49,7 @@ def create_kdenlive_project(
     source = Path(input_path).expanduser().resolve()
     subtitles = Path(subtitles_path).expanduser().resolve()
     if subtitles.suffix.lower() != ".srt":
-        raise KdenliveProjectFailed(
-            "Editable Kdenlive subtitle export requires an .srt file"
-        )
+        raise KdenliveProjectFailed("Editable Kdenlive subtitle export requires an .srt file")
 
     media = probe_video(source, ffprobe_path=config.tools.ffprobe)
     if media.video is None or media.video.width is None or media.video.height is None:
@@ -61,8 +59,10 @@ def create_kdenlive_project(
     if media.duration_ms is None:
         raise KdenliveProjectFailed("Kdenlive export requires a media duration")
 
-    destination = Path(output_path).expanduser() if output_path else (
-        config.output.workspace / f"{source.stem}-captioned.kdenlive"
+    destination = (
+        Path(output_path).expanduser()
+        if output_path
+        else (config.output.workspace / f"{source.stem}-captioned.kdenlive")
     )
     destination = destination.resolve()
 

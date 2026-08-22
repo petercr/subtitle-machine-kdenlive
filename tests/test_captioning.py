@@ -56,9 +56,7 @@ def test_caption_video_creates_expected_job_artifacts(monkeypatch, tmp_path):
     monkeypatch.setattr(captioning_module, "new_job_id", lambda: "job-123")
     monkeypatch.setattr(captioning_module, "get_job_logger", lambda *args, **kwargs: FakeLogger())
 
-    monkeypatch.setattr(
-        captioning_module, "probe_video", lambda path, **kwargs: _media(source)
-    )
+    monkeypatch.setattr(captioning_module, "probe_video", lambda path, **kwargs: _media(source))
 
     def fake_extract(input_path, output_path, **kwargs):
         calls["extract"] += 1

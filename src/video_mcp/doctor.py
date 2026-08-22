@@ -8,9 +8,10 @@ import platform
 import shutil
 import subprocess
 import tempfile
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 from video_mcp.config import AppConfig
 
@@ -169,8 +170,7 @@ def _whisper_gpu_diagnostic(configured_path: Path) -> Diagnostic:
     backend_files = sorted(
         path.name
         for path in executable.parent.iterdir()
-        if path.is_file()
-        and any(token in path.name.lower() for token in ("cuda", "cublas"))
+        if path.is_file() and any(token in path.name.lower() for token in ("cuda", "cublas"))
     )
     if backend_files:
         return Diagnostic(

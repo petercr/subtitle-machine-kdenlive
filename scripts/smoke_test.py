@@ -21,9 +21,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Exercise FFprobe, FFmpeg, subtitle exports, and preview rendering."
     )
-    parser.add_argument(
-        "--config", type=Path, help="Path to video-mcp.yaml or the example config."
-    )
+    parser.add_argument("--config", type=Path, help="Path to video-mcp.yaml or the example config.")
     parser.add_argument(
         "--output",
         type=Path,
@@ -101,9 +99,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     transcript = _transcript()
     transcript_path = output / "transcript.cleaned.json"
-    transcript_path.write_text(
-        json.dumps(transcript.as_dict(), indent=2) + "\n", encoding="utf-8"
-    )
+    transcript_path.write_text(json.dumps(transcript.as_dict(), indent=2) + "\n", encoding="utf-8")
     srt = write_srt(transcript, output / "subtitles.srt", overwrite=True)
     ass = write_ass(
         transcript,
