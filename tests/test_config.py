@@ -47,9 +47,7 @@ output:
     "model_path",
     ["C:/Models/whisper/model.bin", r"\\server\models\whisper.bin"],
 )
-def test_windows_absolute_paths_are_not_resolved_relative_to_configuration(
-    tmp_path, model_path
-):
+def test_windows_absolute_paths_are_not_resolved_relative_to_configuration(tmp_path, model_path):
     config_path = tmp_path / "video-mcp.yaml"
     config_path.write_text(
         f"asr:\n  model: '{model_path}'\n",

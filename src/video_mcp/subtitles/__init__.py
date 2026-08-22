@@ -1,4 +1,5 @@
 """Subtitle formatting, cleanup, styling, and export."""
+
 """Subtitle formatting and export functions."""
 
 from video_mcp.subtitles.ass import (

@@ -46,9 +46,7 @@ def test_create_preview_builds_safe_filter_and_output_command(monkeypatch, tmp_p
     assert calls["kwargs"]["shell"] is False
 
 
-def test_render_subtitles_uses_full_resolution_encoding_when_not_preview(
-    monkeypatch, tmp_path
-):
+def test_render_subtitles_uses_full_resolution_encoding_when_not_preview(monkeypatch, tmp_path):
     input_path = tmp_path / "video.mp4"
     subtitles_path = tmp_path / "captions.ass"
     output_path = tmp_path / "rendered.mp4"

@@ -2,9 +2,9 @@ import json
 
 import pytest
 
+from video_mcp.errors import SubtitleGenerationFailed
 from video_mcp.models import SubtitleSegment, Transcript, Word
 from video_mcp.subtitles.srt import format_srt_timestamp, generate_srt, write_srt
-from video_mcp.errors import SubtitleGenerationFailed
 
 
 def _transcript() -> Transcript:

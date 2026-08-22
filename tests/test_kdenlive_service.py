@@ -7,11 +7,11 @@ import video_mcp.cli as cli_module
 from video_mcp.config import AppConfig, OutputConfig, ToolConfig
 from video_mcp.errors import KdenliveProjectFailed
 from video_mcp.models import AudioStreamInfo, MediaInfo, VideoStreamInfo
+from video_mcp.services import kdenlive as kdenlive_service
 from video_mcp.services.kdenlive import (
     KdenliveProjectResult,
     create_kdenlive_project,
 )
-from video_mcp.services import kdenlive as kdenlive_service
 
 
 def _media(source: Path) -> MediaInfo:
@@ -33,9 +33,7 @@ def _config(tmp_path: Path) -> AppConfig:
     )
 
 
-def test_create_kdenlive_project_uses_workspace_default_and_returns_paths(
-    monkeypatch, tmp_path
-):
+def test_create_kdenlive_project_uses_workspace_default_and_returns_paths(monkeypatch, tmp_path):
     source = tmp_path / "Source Videos" / "Test Video.mp4"
     source.parent.mkdir()
     source.write_bytes(b"video")
@@ -55,9 +53,7 @@ def test_create_kdenlive_project_uses_workspace_default_and_returns_paths(
     assert result.as_dict()["project_path"] == str(result.project_path)
 
 
-def test_create_kdenlive_project_requires_srt_and_preserves_existing_output(
-    monkeypatch, tmp_path
-):
+def test_create_kdenlive_project_requires_srt_and_preserves_existing_output(monkeypatch, tmp_path):
     source = tmp_path / "video.mp4"
     source.write_bytes(b"video")
     subtitles = tmp_path / "subtitles.ass"
@@ -92,9 +88,7 @@ def test_cli_kdenlive_emits_structured_result(monkeypatch, tmp_path, capsys):
     )
     monkeypatch.setattr(cli_module, "create_kdenlive_project", lambda *args, **kwargs: result)
 
-    assert cli_module.main(
-        ["kdenlive", str(source), "--subtitles", str(subtitles), "--json"]
-    ) == 0
+    assert cli_module.main(["kdenlive", str(source), "--subtitles", str(subtitles), "--json"]) == 0
 
     payload = json.loads(capsys.readouterr().out)
     assert payload["project_path"] == str(result.project_path)

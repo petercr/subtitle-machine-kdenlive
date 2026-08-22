@@ -103,13 +103,9 @@ def render_subtitles(
             timeout=timeout_seconds,
         )
     except FileNotFoundError as exc:
-        raise ExecutableNotFound(
-            f"FFmpeg executable was not found: {ffmpeg_path}"
-        ) from exc
+        raise ExecutableNotFound(f"FFmpeg executable was not found: {ffmpeg_path}") from exc
     except OSError as exc:
-        raise ExecutableNotFound(
-            f"Could not start FFmpeg '{ffmpeg_path}': {exc}"
-        ) from exc
+        raise ExecutableNotFound(f"Could not start FFmpeg '{ffmpeg_path}': {exc}") from exc
     except subprocess.TimeoutExpired as exc:
         raise RenderFailed("FFmpeg render timed out", command, -1, str(exc)) from exc
 

@@ -21,10 +21,7 @@ def _media(source: Path, *, frame_rate: float = 29.97) -> MediaInfo:
 
 
 def _properties(element: ElementTree.Element) -> dict[str, str]:
-    return {
-        child.attrib["name"]: child.text or ""
-        for child in element.findall("property")
-    }
+    return {child.attrib["name"]: child.text or "" for child in element.findall("property")}
 
 
 def test_kdenlive_writer_creates_gen5_project_and_sibling_srt(tmp_path):
@@ -84,13 +81,16 @@ def test_kdenlive_writer_creates_gen5_project_and_sibling_srt(tmp_path):
     refreshed_root = ElementTree.parse(result).getroot()
     refreshed_filter = refreshed_root.find("tractor[@id='tractor1']/filter[@id='filter0']")
     assert refreshed_filter is not None
-    assert len(
-        [
-            child
-            for child in refreshed_filter.findall("property")
-            if child.attrib.get("name") == "av.filename"
-        ]
-    ) == 1
+    assert (
+        len(
+            [
+                child
+                for child in refreshed_filter.findall("property")
+                if child.attrib.get("name") == "av.filename"
+            ]
+        )
+        == 1
+    )
 
     main_tractor = refreshed_root.findall("tractor")[-1]
     assert main_tractor.attrib["id"] == "maintractor"

@@ -8,7 +8,6 @@ from mcp.client.stdio import stdio_client
 
 from video_mcp.mcp.server import mcp
 
-
 EXPECTED_TOOLS = {
     "video.inspect",
     "video.transcribe",
@@ -117,10 +116,12 @@ def test_mcp_stdio_server_initializes_and_lists_tools():
             args=["-m", "video_mcp.mcp.server"],
             cwd=Path.cwd(),
         )
-        async with stdio_client(server) as (read_stream, write_stream):
-            async with ClientSession(read_stream, write_stream) as session:
-                await session.initialize()
-                result = await session.list_tools()
-                return {tool.name for tool in result.tools}
+        async with (
+            stdio_client(server) as (read_stream, write_stream),
+            ClientSession(read_stream, write_stream) as session,
+        ):
+            await session.initialize()
+            result = await session.list_tools()
+            return {tool.name for tool in result.tools}
 
     assert asyncio.run(round_trip()) == EXPECTED_TOOLS

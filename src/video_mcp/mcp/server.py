@@ -41,9 +41,7 @@ def _config(config_path: str | None) -> AppConfig:
 
 def _read_transcript(path: PathLike) -> Transcript:
     transcript_path = Path(path).expanduser().resolve()
-    return Transcript.from_dict(
-        json.loads(transcript_path.read_text(encoding="utf-8"))
-    )
+    return Transcript.from_dict(json.loads(transcript_path.read_text(encoding="utf-8")))
 
 
 @mcp.tool(
@@ -129,8 +127,10 @@ def _create_preview(
     config = _config(config_path)
     source = Path(input_path).expanduser().resolve()
     subtitles = Path(subtitles_path).expanduser().resolve()
-    destination = Path(output_path).expanduser() if output_path else (
-        config.output.workspace / f"{source.stem}.preview.mp4"
+    destination = (
+        Path(output_path).expanduser()
+        if output_path
+        else (config.output.workspace / f"{source.stem}.preview.mp4")
     )
     preview = create_preview(
         source,
@@ -227,8 +227,10 @@ def subtitle_export_srt(
 ) -> dict[str, Any]:
     config = _config(config_path)
     source = Path(transcript_path).expanduser().resolve()
-    destination = Path(output_path).expanduser() if output_path else (
-        config.output.workspace / f"{source.stem}.srt"
+    destination = (
+        Path(output_path).expanduser()
+        if output_path
+        else (config.output.workspace / f"{source.stem}.srt")
     )
     transcript = _read_transcript(source)
     result = write_srt(transcript, destination, overwrite=overwrite)
@@ -251,8 +253,10 @@ def subtitle_export_ass(
 ) -> dict[str, Any]:
     config = _config(config_path)
     source = Path(transcript_path).expanduser().resolve()
-    destination = Path(output_path).expanduser() if output_path else (
-        config.output.workspace / f"{source.stem}.ass"
+    destination = (
+        Path(output_path).expanduser()
+        if output_path
+        else (config.output.workspace / f"{source.stem}.ass")
     )
     transcript = _read_transcript(source)
     result = write_ass(

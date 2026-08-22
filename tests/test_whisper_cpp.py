@@ -1,11 +1,10 @@
 import json
-import subprocess
 from pathlib import Path
 
 import pytest
 
-from video_mcp.asr.base import TranscriptionOptions
 from video_mcp.asr import whisper_cpp as whisper_module
+from video_mcp.asr.base import TranscriptionOptions
 from video_mcp.asr.whisper_cpp import WhisperCppBackend, parse_whisper_output
 from video_mcp.errors import ModelNotFound, TranscriptionFailed
 
@@ -109,9 +108,7 @@ def test_whisper_backend_uses_safe_arguments_for_spaced_paths(monkeypatch, tmp_p
 
     transcript = WhisperCppBackend(executable, model).transcribe(
         audio_path,
-        TranscriptionOptions(
-            device="cpu", threads=6, process_started=observed_pids.append
-        ),
+        TranscriptionOptions(device="cpu", threads=6, process_started=observed_pids.append),
     )
 
     command, kwargs = calls[0]

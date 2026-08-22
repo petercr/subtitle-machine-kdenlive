@@ -56,13 +56,9 @@ def probe_video(
             timeout=timeout_seconds,
         )
     except FileNotFoundError as exc:
-        raise ExecutableNotFound(
-            f"FFprobe executable was not found: {ffprobe_path}"
-        ) from exc
+        raise ExecutableNotFound(f"FFprobe executable was not found: {ffprobe_path}") from exc
     except OSError as exc:
-        raise ExecutableNotFound(
-            f"Could not start FFprobe '{ffprobe_path}': {exc}"
-        ) from exc
+        raise ExecutableNotFound(f"Could not start FFprobe '{ffprobe_path}': {exc}") from exc
     except subprocess.TimeoutExpired as exc:
         raise MediaProbeFailed(
             "FFprobe inspection timed out",
@@ -94,9 +90,7 @@ def probe_video(
         ) from exc
 
 
-def parse_ffprobe_output(
-    payload: str | Mapping[str, Any], input_path: PathLike
-) -> MediaInfo:
+def parse_ffprobe_output(payload: str | Mapping[str, Any], input_path: PathLike) -> MediaInfo:
     """Convert FFprobe JSON into the application's stable media model."""
 
     if isinstance(payload, str):

@@ -48,12 +48,8 @@ class WhisperCppBackend(ASRBackend):
             command = self._command(audio, output_base, options)
             completed = self._run(command, options)
             if completed.returncode != 0 and options.device == "auto":
-                logger.warning(
-                    "Whisper.cpp auto device invocation failed; retrying on CPU"
-                )
-                command = self._command(
-                    audio, output_base, options, force_cpu=True
-                )
+                logger.warning("Whisper.cpp auto device invocation failed; retrying on CPU")
+                command = self._command(audio, output_base, options, force_cpu=True)
                 completed = self._run(command, options)
             if completed.returncode != 0:
                 raise TranscriptionFailed(
@@ -142,9 +138,7 @@ class WhisperCppBackend(ASRBackend):
             ) from exc
 
 
-def parse_whisper_output(
-    payload: str | Mapping[str, Any], audio_path: PathLike
-) -> Transcript:
+def parse_whisper_output(payload: str | Mapping[str, Any], audio_path: PathLike) -> Transcript:
     """Normalize whisper-cli JSON into the application transcript model."""
 
     if isinstance(payload, str):
@@ -162,9 +156,7 @@ def parse_whisper_output(
     result = data.get("result", {})
     transcription = data.get("transcription", [])
     if not isinstance(result, Mapping) or not isinstance(transcription, list):
-        raise InvalidTranscriptOutput(
-            "Whisper.cpp JSON must contain result and transcription"
-        )
+        raise InvalidTranscriptOutput("Whisper.cpp JSON must contain result and transcription")
 
     segments: list[SubtitleSegment] = []
     for index, raw_segment in enumerate(transcription, start=1):
@@ -172,9 +164,7 @@ def parse_whisper_output(
             raise InvalidTranscriptOutput("Whisper.cpp segment must be an object")
         start_ms, end_ms = _segment_offsets(raw_segment)
         if end_ms < start_ms:
-            raise InvalidTranscriptOutput(
-                f"Whisper.cpp segment {index} ends before it starts"
-            )
+            raise InvalidTranscriptOutput(f"Whisper.cpp segment {index} ends before it starts")
         text = str(raw_segment.get("text", "")).strip()
         if not text:
             continue

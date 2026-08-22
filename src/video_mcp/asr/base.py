@@ -19,9 +19,7 @@ class TranscriptionOptions:
     threads: int = 4
     translate: bool = False
     timeout_seconds: float = 3600
-    process_started: Callable[[int], None] | None = field(
-        default=None, compare=False, repr=False
-    )
+    process_started: Callable[[int], None] | None = field(default=None, compare=False, repr=False)
 
     def __post_init__(self) -> None:
         if self.device not in {"auto", "cpu", "cuda"}:

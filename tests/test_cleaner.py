@@ -1,17 +1,18 @@
 import json
 import subprocess
+
 import pytest
 
 from video_mcp.config import AppConfig, ASRConfig, LLMConfig, OutputConfig, ToolConfig
 from video_mcp.errors import InvalidCleanupOutput
 from video_mcp.models import SubtitleSegment, Transcript
 from video_mcp.services.cleanup import clean_transcript
+from video_mcp.subtitles import cleaner as cleaner_module
 from video_mcp.subtitles.cleaner import (
     DeterministicCleaner,
     LocalLLMCleaner,
     LocalLLMServerCleaner,
 )
-from video_mcp.subtitles import cleaner as cleaner_module
 
 
 def _transcript() -> Transcript:
@@ -49,9 +50,14 @@ def test_local_llm_cleaner_chunks_and_validates_schema(monkeypatch, tmp_path):
     def fake_run(command, **kwargs):
         calls.append(command)
         prompt = command[command.index("--prompt") + 1]
-        ids = [item["id"] for item in json.loads(prompt.split("Input transcript chunk:\n", 1)[1])["segments"]]
-        payload = {"segments": [{"id": segment_id, "text": f"Cleaned {segment_id}"} for segment_id in ids]}
-        return subprocess.CompletedProcess(command, 0, stdout=f"answer:\n{json.dumps(payload)}", stderr="")
+        chunk = json.loads(prompt.split("Input transcript chunk:\n", 1)[1])
+        ids = [item["id"] for item in chunk["segments"]]
+        payload = {
+            "segments": [{"id": segment_id, "text": f"Cleaned {segment_id}"} for segment_id in ids]
+        }
+        return subprocess.CompletedProcess(
+            command, 0, stdout=f"answer:\n{json.dumps(payload)}", stderr=""
+        )
 
     monkeypatch.setattr(cleaner_module.subprocess, "run", fake_run)
     cleaned = LocalLLMCleaner(

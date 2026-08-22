@@ -33,7 +33,7 @@ def test_formatter_splits_long_word_timestamp_segment_at_sentence_boundaries():
     ]
     assert all(
         previous.end_ms <= current.start_ms
-        for previous, current in zip(formatted.segments, formatted.segments[1:])
+        for previous, current in zip(formatted.segments, formatted.segments[1:], strict=False)
     )
 
 
@@ -45,16 +45,10 @@ def test_formatter_wraps_split_cues_to_the_configured_line_length():
     transcript = Transcript(
         language="en",
         duration_ms=3000,
-        segments=[
-            SubtitleSegment(
-                "seg-1", 0, 3000, "This is a long caption line.", words
-            )
-        ],
+        segments=[SubtitleSegment("seg-1", 0, 3000, "This is a long caption line.", words)],
     )
 
-    formatted = format_transcript(
-        transcript, max_chars=20, max_chars_per_line=12
-    )
+    formatted = format_transcript(transcript, max_chars=20, max_chars_per_line=12)
 
     assert formatted.segments[0].text == "This is a\nlong"
 

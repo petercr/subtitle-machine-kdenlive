@@ -5,8 +5,8 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 from video_mcp import __version__
 from video_mcp.config import ConfigurationError, load_config
@@ -51,9 +51,7 @@ def build_parser() -> argparse.ArgumentParser:
         "doctor",
         help="Report local tool, hardware, model, and workspace capabilities.",
     )
-    doctor_parser.add_argument(
-        "--json", action="store_true", help="Emit the report as JSON."
-    )
+    doctor_parser.add_argument("--json", action="store_true", help="Emit the report as JSON.")
     inspect_parser = commands.add_parser(
         "inspect",
         help="Inspect a media file with FFprobe.",
@@ -92,9 +90,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("auto", "cpu", "cuda"),
         help="ASR device selection (defaults to configuration).",
     )
-    transcribe_parser.add_argument(
-        "--threads", type=int, default=4, help="ASR CPU thread count."
-    )
+    transcribe_parser.add_argument("--threads", type=int, default=4, help="ASR CPU thread count.")
     transcribe_parser.add_argument(
         "--overwrite", action="store_true", help="Replace an existing transcript JSON."
     )
@@ -112,9 +108,7 @@ def build_parser() -> argparse.ArgumentParser:
     clean_parser.add_argument(
         "--overwrite", action="store_true", help="Replace an existing cleaned transcript."
     )
-    clean_parser.add_argument(
-        "--json", action="store_true", help="Emit the result as JSON."
-    )
+    clean_parser.add_argument("--json", action="store_true", help="Emit the result as JSON.")
     srt_parser = commands.add_parser(
         "export-srt",
         help="Export a normalized transcript JSON file as SRT.",
@@ -126,9 +120,7 @@ def build_parser() -> argparse.ArgumentParser:
     srt_parser.add_argument(
         "--overwrite", action="store_true", help="Replace an existing SRT file."
     )
-    srt_parser.add_argument(
-        "--json", action="store_true", help="Emit the result paths as JSON."
-    )
+    srt_parser.add_argument("--json", action="store_true", help="Emit the result paths as JSON.")
     ass_parser = commands.add_parser(
         "export-ass",
         help="Export a normalized transcript JSON file as styled ASS.",
@@ -137,17 +129,13 @@ def build_parser() -> argparse.ArgumentParser:
     ass_parser.add_argument(
         "--output", type=Path, help="Output ASS path (defaults inside workspace)."
     )
-    ass_parser.add_argument(
-        "--style", help="Named ASS style preset (defaults to configuration)."
-    )
+    ass_parser.add_argument("--style", help="Named ASS style preset (defaults to configuration).")
     ass_parser.add_argument("--width", type=int, default=1920, help="ASS play width.")
     ass_parser.add_argument("--height", type=int, default=1080, help="ASS play height.")
     ass_parser.add_argument(
         "--overwrite", action="store_true", help="Replace an existing ASS file."
     )
-    ass_parser.add_argument(
-        "--json", action="store_true", help="Emit the result paths as JSON."
-    )
+    ass_parser.add_argument("--json", action="store_true", help="Emit the result paths as JSON.")
     preview_parser = commands.add_parser(
         "create-preview",
         help="Burn ASS subtitles into a fast, downscaled MP4 preview.",
@@ -199,12 +187,8 @@ def build_parser() -> argparse.ArgumentParser:
     caption_parser.add_argument(
         "--threads", type=int, default=4, help="Whisper.cpp CPU thread count."
     )
-    caption_parser.add_argument(
-        "--style", help="ASS style preset (defaults to configuration)."
-    )
-    caption_parser.add_argument(
-        "--preview-width", type=int, default=1280, help="Preview width."
-    )
+    caption_parser.add_argument("--style", help="ASS style preset (defaults to configuration).")
+    caption_parser.add_argument("--preview-width", type=int, default=1280, help="Preview width.")
     caption_parser.add_argument(
         "--no-preview", action="store_true", help="Stop after transcript and subtitle exports."
     )
@@ -282,10 +266,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.threads <= 0:
             print("Configuration error: --threads must be greater than zero", file=sys.stderr)
             return 2
-        output = (
-            args.output
-            or config.output.workspace / f"{args.input.stem}.transcript.raw.json"
-        )
+        output = args.output or config.output.workspace / f"{args.input.stem}.transcript.raw.json"
         if output.exists() and not args.overwrite:
             print(
                 f"Output already exists: {output}; pass --overwrite to replace it",
@@ -350,9 +331,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             return 1
         try:
-            transcript = Transcript.from_dict(
-                json.loads(args.input.read_text(encoding="utf-8"))
-            )
+            transcript = Transcript.from_dict(json.loads(args.input.read_text(encoding="utf-8")))
             srt_path = write_srt(transcript, output, overwrite=args.overwrite)
         except (VideoMcpError, ValueError, OSError, json.JSONDecodeError) as exc:
             print(f"Subtitle error: {exc}", file=sys.stderr)
@@ -380,9 +359,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         try:
             if args.width <= 0 or args.height <= 0:
                 raise ValueError("ASS width and height must be greater than zero")
-            transcript = Transcript.from_dict(
-                json.loads(args.input.read_text(encoding="utf-8"))
-            )
+            transcript = Transcript.from_dict(json.loads(args.input.read_text(encoding="utf-8")))
             ass_path = write_ass(
                 transcript,
                 output,

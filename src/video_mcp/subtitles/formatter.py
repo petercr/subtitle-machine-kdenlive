@@ -37,9 +37,7 @@ def format_transcript(
         ):
             formatted.append(segment)
             continue
-        formatted.extend(
-            _split_segment(segment, max_chars, max_duration_ms, max_chars_per_line)
-        )
+        formatted.extend(_split_segment(segment, max_chars, max_duration_ms, max_chars_per_line))
     return replace(transcript, segments=formatted)
 
 

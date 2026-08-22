@@ -1,15 +1,11 @@
-import subprocess
-from pathlib import Path
-
 import pytest
 
+from video_mcp.asr import parakeet as parakeet_module
 from video_mcp.asr.base import TranscriptionOptions
 from video_mcp.asr.factory import create_asr_backend
-from video_mcp.asr import parakeet as parakeet_module
 from video_mcp.asr.parakeet import ParakeetBackend, parse_parakeet_output
 from video_mcp.config import AppConfig, ASRConfig, ToolConfig
 from video_mcp.errors import InvalidTranscriptOutput, ModelNotFound, TranscriptionFailed
-
 
 PARAKEET_OUTPUT = """
 Processing audio (176000 samples, 11.00 seconds)
@@ -140,6 +136,4 @@ def test_parakeet_backend_reports_command_failure(monkeypatch, tmp_path):
     monkeypatch.setattr(parakeet_module.subprocess, "Popen", fake_popen)
 
     with pytest.raises(TranscriptionFailed, match="bad audio"):
-        ParakeetBackend("parakeet-cli", model).transcribe(
-            audio, TranscriptionOptions(device="cpu")
-        )
+        ParakeetBackend("parakeet-cli", model).transcribe(audio, TranscriptionOptions(device="cpu"))
